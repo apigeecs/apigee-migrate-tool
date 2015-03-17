@@ -68,6 +68,8 @@ module.exports = function(grunt) {
 
 				    },
 				    function(callback){
+				    	//urlencode the key
+						cKey = encodeURI(cKey);
 				        grunt.verbose.writeln(create_key_url+ cKey);
 				        grunt.verbose.writeln(JSON.stringify(products_payload));
  						request.post({
@@ -146,6 +148,8 @@ module.exports = function(grunt) {
 			var credentials = app.credentials;
 			for (var i = 0; i < credentials.length; i++) {
 				var cKey = credentials[i].consumerKey;
+				//urlencode the key
+				cKey = encodeURI(cKey);
 				var delete_key_url = url + dev + "/apps/" + app.name + "/keys/" + cKey;
 				grunt.verbose.writeln(delete_key_url);    	
 				request.del(delete_key_url , function(error, response, body){
