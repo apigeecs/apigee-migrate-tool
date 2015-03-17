@@ -40,6 +40,6 @@ module.exports = {
 
 NOTE : It is recommended to take a backup of both the system using the backup scripts provided with the sdk before running this tool.
 
-•	All exports work on the “from” configurations in config.js and store the data in the “data” folder on your local system.
-•	All imports and delete tasks work on the “to” configurations in config.js. 
-•	Deletes made using these scripts cannot be rollbacked. 
+- All exports work on the “from” configurations in config.js and store the data in the “data” folder on your local system.
+- All imports and delete tasks work on the “to” configurations in config.js. 
+- Deletes made using these scripts cannot be rollbacked. 
