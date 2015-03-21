@@ -1,19 +1,19 @@
 module.exports = {
 
 	from: {
-		version: 'R22',
+		version: '14.01',
 		url: 'http://localhost:28080',
-		userid: 'userid@apigee.com',
-		passwd: 'your-passwd',
-		org: 'your-org',
-		env: 'your-env'
+		userid: 'sbagdadi@apigee.com',
+		passwd: 'shanu999',
+		org: 'shah-nonprod',
+		env: 'prod'
 	},
 	to: {
-		version: '14.07',
+		version: '15.01',
 		url: 'http://localhost:48080',
-		userid: 'userid@apigee.com',
-		passwd: 'your-passwd',
-		org: 'your-org',
-		env: 'your-env'
+		userid: 'sbagdadi@apigee.com',
+		passwd: 'shanu999',
+		org: 'shah-prod',
+		env: 'vm5'
 	}
 } ;

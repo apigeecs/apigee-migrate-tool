@@ -53,11 +53,11 @@ module.exports = function(grunt) {
         src: './data/proxies/*'
     },
     readCSVDevs: {
-        in_devs: './input/dev.csv',
+        in_devs: './input/devs.csv',
         out_devs: './data/devs/'   
       },
     readCSVApps: {
-        in_apps: './input/app.csv',
+        in_apps: './input/apps.csv',
         out_apps: './data/apps/'
     }
 
