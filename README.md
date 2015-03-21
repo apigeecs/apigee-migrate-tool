@@ -1,4 +1,4 @@
-# Apigee Organization Migration Tool
+# Apigee Organization Data Migration Tool
 
 ##Features
 1. Export Data from an org
@@ -6,16 +6,19 @@
 	- Proxies (latest version)
 	- Products
 	- Apps
+	- App Keys
 	- KVM (coming soon)
 2. Import Data to an org
 	- Developers
 	- Proxies (latest version) and deploy them 
 	- Products
 	- Apps
+	- App Keys
 	- KVM (coming soon)
 3. Import Data from csv file to an org
 	- Developers
 	- Apps
+	- App Keys
 	- KVM (coming soon)
 
 
