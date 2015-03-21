@@ -80,3 +80,16 @@ You may want to redirect standard out to log files, so they can be reviewed late
 The above command will import all apps starting with "App" irrespective of the developer the app belongs to. 
 For more details on other globbing patterns supported please refer to  [Globbing Pattern] (http://gruntjs.com/configuring-tasks#globbing-patterns) 
 
+
+- To import Developers or Apps from a csv file.
+	```
+	grunt readCSVDevs -v 
+	```
+The above command will read the input/devs.csv file and generate the developer json files in the data/devs folder. These developers can then be imported to your org using the importDevs command shown earlier. 
+A sample devs.csv file is shown below
+![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/devs_csv.png)
+
+This will create a corrosponding json in the data/devs/mqb2btools@watever.com as shown below
+![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/dev_json.png)
+
+You can also imports Apps from csv in a similar way. Take a look at the sample apps.csv in the input folder.
