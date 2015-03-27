@@ -21,6 +21,7 @@
 	- App Keys
 	- KVM (coming soon)
 
+##License -  [MIT !](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LICENSE) 
 
 ##Installation
 
