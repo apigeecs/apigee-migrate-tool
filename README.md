@@ -31,11 +31,13 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 
 	npm install -g grunt-cli
 
-3.	Install the node dependencies 
+3.	Download the tool or git clone the repo.
+
+4.	Install the node dependencies 
 
 	npm install
 
-4.	Edit the config.js file to suit your environment
+5.	Edit the config.js file to suit your environment
 	```
 	module.exports = {
 
@@ -58,7 +60,7 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 	} ;
 	```
 
-5.	Run “grunt” to get all the grunt tasks.
+6.	Run “grunt” to get all the grunt tasks.
 
  ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/tasks.png)
 
