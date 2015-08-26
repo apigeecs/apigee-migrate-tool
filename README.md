@@ -7,7 +7,7 @@
 	- Products
 	- Apps
 	- App Keys
-	- KVM (coming soon)
+	- KVM (Org and Env)
 2. Import Data to an org
 	- Developers
 	- Proxies (latest version) and deploy them 
@@ -19,7 +19,7 @@
 	- Developers
 	- Apps
 	- App Keys
-	- KVM (coming soon)
+	- KVM (Org and Env)
 
 License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LICENSE) 
 

@@ -44,7 +44,7 @@ module.exports = function(grunt) {
 									    for (var j = 0; j < apps.length; j++) {
 									    	var app = apps[j];
 									    	grunt.verbose.writeln(app);
-									    	var file_name  = dev_folder + "/" + app.name;
+									    	var file_name  = dev_folder + "/" + app.appId;
 									    	grunt.verbose.writeln("writing file: " + file_name);
 									    	grunt.file.write(file_name, JSON.stringify(app));
 									    };
