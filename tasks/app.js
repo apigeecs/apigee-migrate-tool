@@ -108,6 +108,18 @@ module.exports = function(grunt) {
 			var app = JSON.parse(content);
 			grunt.verbose.writeln("Creating app : " + app.name + " under developer " + dev);
 
+			// These vars are deleted for app creation but need to be retained for injection after
+			/*KDF*/ var oDeveloperId = app['developerId'];
+			/*KDF*/ var oCredentials = app['credentials'];
+			/*KDF*/ var oAppFamily = app['appFamily'];
+			/*KDF*/ var oAccessType = app['accessType'];
+			/*KDF*/ var oStatus = app['status'];
+			grunt.verbose.writeln("dev id" + oDeveloperId);
+			grunt.verbose.writeln("creds " + JSON.stringify(oCredentials));
+			grunt.verbose.writeln("family" + oAppFamily);
+			grunt.verbose.writeln("a type" + oAccessType);
+			grunt.verbose.writeln("status" + oStatus);
+			
 			delete app['appId'];
 			delete app['status'];
 			delete app['developerId'];
@@ -149,8 +161,46 @@ module.exports = function(grunt) {
 				    if (response)	
 				  	  status = response.statusCode;
 				  	grunt.verbose.writeln('Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body);
-				  	if (error || status!=200 )
-					  	grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body); 
+				  	if (error || status!=200 ){
+					  	grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body);
+				  	}
+				  	else {
+				  		// delete of app creds succeeded.. Create new creds with stored values from migrated app
+				  		grunt.verbose.writeln('Deletion of generated creds succeeded');
+				  		
+				  		// BROKEN - The post below needs to be dynamic (series) based on the number of elements in oCredentials[]
+				  		var create_creds_url = app_url + '/' + app.name + '/keys/create';
+				  		var create_creds_body = {"consumerKey": oCredentials[0]['consumerKey'], "consumerSecret": oCredentials[0]['consumerSecret']}
+				  		
+				  		grunt.verbose.writeln('POSTing body: ' + JSON.stringify(create_creds_body) + ' to url: ' + create_creds_url);
+				  		request.post({
+							  headers: {'Content-Type' : 'application/json'},
+							  url:     create_creds_url,
+							  body:    JSON.stringify(create_creds_body)
+							}, function(error, response, body){
+								grunt.verbose.writeln('POST HAPPENED');
+								try{
+									var dStatus = 999;
+									if (response) {
+										dStatus = response.statusCode;
+										if (dStatus == 200) {
+											grunt.verbose.writeln('Addition of first credential succeeded');
+											var creds_response = JSON.parse(body);
+										}
+									}
+									
+								}
+								catch(err)
+								{
+									grunt.log.error("ERROR - from App credential creation URL : " + create_creds_url );
+									grunt.log.error(body);
+								}
+								
+							});
+				  		
+				  		
+				  		
+				  	}
 					if (done_count == files.length)
 						{
 							grunt.log.ok('Processed ' + done_count + ' apps');
