@@ -80,10 +80,9 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 ## Usage
 
 ### To export all data types 
-
-        ```
+```
 	grunt exportAll -v
-	```
+```	
 	The switch `-v` is for verbose mode. The following folder structure with data will be created in your current directory.
 
  ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/export.png)
@@ -91,9 +90,9 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 
 ### To import Developers
 
-	```
+```
 	grunt importDevs -v 
-	```
+```
 
 You may want to redirect standard out to log files, so they can be reviewed later. It will import all the developers from the data/devs folder to the org specified in the *to* configuration in your config.js file.
 
