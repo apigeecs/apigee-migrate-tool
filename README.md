@@ -104,18 +104,18 @@ By default the `importDevs`, `importApps`, and `importKeys` tasks import all the
 
 ### To import a specific entity you can pass an argument `src` as shown below.
 
-	```
+```
 	grunt importApps -v --src=./data/apps/*/App*
-	```
+```
 	
 The above command will import all apps starting with "App" irrespective of the developer the app belongs to. 
 For more details on other globbing patterns supported please refer to [Globbing Pattern] (http://gruntjs.com/configuring-tasks#globbing-patterns).
 
 ### To import Developers or Apps from a csv file.
 
-	```
+```
 	grunt readCSVDevs -v 
-	```
+```
 
 The above command will read the input/devs.csv file and generate the developer json files in the data/devs folder. These developers can then be imported to your org using the importDevs command shown earlier. 
 
