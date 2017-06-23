@@ -26,7 +26,7 @@ This is a tool for migrating configuration information and entities from one Api
 - Make a backup of both systems using the backup scripts provided with the OPDK before running this tool.
 - All export tasks work on the “from” configurations in your config.js and store the data in the “data” folder on your local system.
 - All imports and delete tasks work on the “to” configurations in config.js. 
-- **Deletes made using these scripts cannot be rollbacked. Please use delete commands with caution.**
+- **Deletes made using these scripts cannot be rolled back. Please use delete commands with caution.**
 
 License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LICENSE) 
 
@@ -72,18 +72,18 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 	} ;
 	```
 
-6.	Run `grunt` to run all the grunt tasks.
+6. Run `grunt` to run all the grunt tasks.
 
- ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/tasks.png)
+   ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/tasks.png)
 
 
 ## Usage
 
 ### To export all data types 
 ```
-	grunt exportAll -v
+grunt exportAll -v
 ```	
-	The switch `-v` is for verbose mode. The following folder structure with data will be created in your current directory.
+The switch `-v` is for verbose mode. The following folder structure with data will be created in your current directory.
 
  ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/export.png)
 
@@ -91,7 +91,7 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 ### To import Developers
 
 ```
-	grunt importDevs -v 
+grunt importDevs -v 
 ```
 
 You may want to redirect standard out to log files, so they can be reviewed later. It will import all the developers from the data/devs folder to the org specified in the *to* configuration in your config.js file.
@@ -105,23 +105,23 @@ By default the `importDevs`, `importApps`, and `importKeys` tasks import all the
 ### To import a specific entity you can pass an argument `src` as shown below.
 
 ```
-	grunt importApps -v --src=./data/apps/*/App*
+grunt importApps -v --src=./data/apps/*/App*
 ```
 	
 The above command will import all apps starting with "App" irrespective of the developer the app belongs to. 
-For more details on other globbing patterns supported please refer to [Globbing Pattern] (http://gruntjs.com/configuring-tasks#globbing-patterns).
+For more details on other globbing patterns supported please refer to [Globbing Pattern](http://gruntjs.com/configuring-tasks#globbing-patterns).
 
 ### To import Developers or Apps from a csv file.
 
 ```
-	grunt readCSVDevs -v 
+grunt readCSVDevs -v 
 ```
 
 The above command will read the input/devs.csv file and generate the developer json files in the data/devs folder. These developers can then be imported to your org using the importDevs command shown earlier. 
 
 A sample devs.csv file is shown below.
 
-	![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/devs_csv.png)
+![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/devs_csv.png)
 
 This will create a corresponding json in the data/devs/mqb2btools@whatever.com, as shown below.
 
