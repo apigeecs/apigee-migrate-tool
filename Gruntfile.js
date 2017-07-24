@@ -31,8 +31,14 @@ module.exports = function(grunt) {
     exportProxyKVM: {
        dest: './data/kvm/proxy'       
     },
+    exportSharedFlows: {
+       dest: './data/sharedflows'       
+    },
     importProxies: {
         src: './data/proxies/*.zip'
+    },
+    importSharedFlows: {
+        src: './data/sharedflows/*.zip'
     },
     importProducts: {
         src: 'data/products/*'
@@ -70,6 +76,9 @@ module.exports = function(grunt) {
     deleteProxies: {
         src: './data/proxies/*'
     },
+    deleteSharedFlows: {
+        src: './data/sharedflows/*'
+    },
     deleteOrgKVM: {
         src: './data/kvm/org/*'
     },
@@ -94,9 +103,9 @@ module.exports = function(grunt) {
   grunt.loadTasks('tasks');
 
   grunt.registerTask('default', ['availabletasks']);
-  grunt.registerTask('exportAll', ['exportDevs','exportProducts','exportApps', 'exportProxies', 'exportOrgKVM', 'exportEnvKVM', 'exportProxyKVM']);
-  grunt.registerTask('importAll', ['importProxies','importDevs','importProducts', 'importApps','importKeys', 'importOrgKVM', 'importEnvKVM', 'importProxyKVM']);
-  grunt.registerTask('deleteAll', ['warn','deleteKeys','deleteApps','deleteProducts', 'deleteDevs', 'deleteProxies', 'deleteOrgKVM', 'deleteEnvKVM', 'deleteProxyKVM']);
+  grunt.registerTask('deleteAll', ['warn','deleteProducts','deleteDevs','deleteApps','deleteKeys','deleteProxies','deleteSharedFlows', 'deleteEnvKVM', 'deleteOrgKVM', 'deleteProxyKVM']);
+  grunt.registerTask('exportAll', ['exportDevs','exportProducts','exportApps','exportProxies','exportSharedFlows','exportOrgKVM','exportEnvKVM','exportProxyKVM']);
+  grunt.registerTask('importAll', ['importSharedFlows','importProxies','importDevs','importProducts', 'importApps','importKeys', 'importOrgKVM', 'importEnvKVM', 'importProxyKVM']);
 
   grunt.registerTask('warn', 'Display Warning', function() {
       var readline = require('readline');
@@ -105,7 +114,7 @@ module.exports = function(grunt) {
         output: process.stdout
       });
       var done = this.async();
-      rl.question('THIS SCRIPT WILL DELETE ONE OR MORE RESOURCES will be deleted from the org - ' + apigee.to.org + ' [' + apigee.to.version + '].' + ' THIS ACTION CANNOT BE ROLLBACK. Do you want to continue (yes/no) ? ', function(answer) {
+      rl.question('THIS SCRIPT WILL DELETE ONE OR MORE RESOURCES FROM THE ORG - ' + apigee.to.org + ' [' + apigee.to.version + '].' + ' THIS ACTION CANNOT BE ROLLED BACK. Do you want to continue (yes/no) ? ', function(answer) {
         if (answer.match(/^y(es)?$/i))
           done(true);
         else
