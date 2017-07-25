@@ -12,7 +12,6 @@ module.exports = function(grunt) {
 		var passwd = apigee.from.passwd;
 		var filepath = grunt.config.get("exportProxyKVM.dest.data");
 		var done_count =0;
-		var done = this.async();
 		var proxies_url = url + "/v1/organizations/" + org + "/apis";
 		grunt.verbose.writeln(proxies_url);
 		grunt.file.mkdir(filepath);
@@ -53,13 +52,8 @@ module.exports = function(grunt) {
 						{
 							grunt.log.error(error);
 						}
-						done_count++;
-						if (done_count == proxies.length)
-						{
-							grunt.log.ok('Exported ' + done_count + ' proxy KVMs.');
-							done();
-						}
 					}.bind( {proxy_url: proxy_url, proxy: proxy})).auth(userid, passwd, true);
+
 				}
 			}
 			else
@@ -67,6 +61,7 @@ module.exports = function(grunt) {
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
+		var done = this.async();
 	});
 
 
