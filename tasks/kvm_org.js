@@ -109,38 +109,43 @@ module.exports = function(grunt) {
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
 		var done_count = 0;
+		var done = this.async();
 		var files = this.filesSrc;
 		var opts = {flatten: false};
 		var f = grunt.option('src');
 		if (f)
 		{
+			console.log('src pattern = ' + f);
 			grunt.verbose.writeln('src pattern = ' + f);
 			files = grunt.file.expand(opts,f);
-		}
-		url = url + "/v1/organizations/" + org + "/keyvaluemaps/";
-		var done = this.async();
-		files.forEach(function(filepath) {
-			var content = grunt.file.read(filepath);
-			var kvm = JSON.parse(content);
-			var del_url = url + kvm.name;
-			grunt.verbose.write(del_url);	
-			request.del(del_url, function(error, response, body){
-			  var status = 999;
-			  if (response)	
-				status = response.statusCode;
-			  grunt.verbose.writeln('Resp [' + status + '] for kvm deletion ' + this.del_url + ' -> ' + body);
-			  if (error || status!=200)
-			  { 
-			  	grunt.verbose.error('ERROR Resp [' + status + '] for kvm deletion ' + this.del_url + ' -> ' + body); 
-			  }
-			  done_count++;
-			  if (done_count == files.length)
-			  {
-				grunt.log.ok('Processed ' + done_count + ' kvms');
-				done();
-			  }
-			}.bind( {del_url: del_url}) ).auth(userid, passwd, true);
+    		url = url + "/v1/organizations/" + org + "/keyvaluemaps/";
+    		files.forEach(function(filepath) 
+            {
+    			var content = grunt.file.read(filepath);
+    			var kvm = JSON.parse(content);
+    			var del_url = url + kvm.name;
+    			grunt.verbose.write(del_url);	
+    			request.del(del_url, function(error, response, body){
+    			  var status = 999;
+    			  if (response)	
+    				status = response.statusCode;
+    			  grunt.verbose.writeln('Resp [' + status + '] for kvm deletion ' + this.del_url + ' -> ' + body);
+    			  if (error || status!=200)
+    			  { 
+    			  	grunt.verbose.error('ERROR Resp [' + status + '] for kvm deletion ' + this.del_url + ' -> ' + body); 
+    			  }
+    			  done_count++;
+    			  if (done_count == files.length)
+    			  {
+    				grunt.log.ok('Processed ' + done_count + ' kvms');
+    				done();
+    			  }
+    			}.bind( {del_url: del_url}) ).auth(userid, passwd, true);
 
-		});
+    		});
+    	} else {
+    	    console.log('No org KVM sources given.')
+            done();
+    	}
 	});
 };
