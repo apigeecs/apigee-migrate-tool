@@ -9,6 +9,7 @@ This is a tool for migrating configuration information and entities from one Api
   - Apps
   - App Keys
   - KVM (Org and Env)
+  - Reports
 - Import data to an org
   - Developers
   - Proxies (latest version) and deploy them 
@@ -16,6 +17,7 @@ This is a tool for migrating configuration information and entities from one Api
   - Apps
   - App Keys
   - KVM (coming soon)
+  - Reports
 - Import data from a csv file to an org
   - Developers
   - Apps
@@ -74,7 +76,7 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 
 6.	Run `grunt` to run all the grunt tasks.
 
- ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/tasks.png)
+ ![](blob/master/image/tasks.png)
 
 
 ## Usage
@@ -85,7 +87,7 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 ```	
 	The switch `-v` is for verbose mode. The following folder structure with data will be created in your current directory.
 
- ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/export.png)
+ ![](blob/master/image/export.png)
 
 
 ### To import Developers
@@ -121,10 +123,10 @@ The above command will read the input/devs.csv file and generate the developer j
 
 A sample devs.csv file is shown below.
 
-	![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/devs_csv.png)
+![](blob/master/image/devs_csv.png)
 
 This will create a corresponding json in the data/devs/mqb2btools@whatever.com, as shown below.
 
-![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/dev_json.png)
+![](blob/master/image/dev_json.png)
 
 You can also import Apps from a csv file in a similar way. Take a look at the sample apps.csv in the input folder.
