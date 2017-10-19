@@ -47,6 +47,14 @@ module.exports = function(grunt) {
 						{
 							grunt.log.error(error);
 						}
+						
+						done_count++;
+						if (done_count == proxies.length)
+						{
+							grunt.log.ok('Exported ' + done_count + ' proxies');
+							done();
+						}
+						
 					}).auth(userid, passwd, true);
 			    	// End proxy details
 			    }; 

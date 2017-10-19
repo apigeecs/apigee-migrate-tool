@@ -12,6 +12,7 @@ module.exports = function(grunt) {
 		var passwd = apigee.from.passwd;
 		var filepath = grunt.config.get("exportEnvKVM.dest.data");
 		var done_count =0;
+		var done = this.async();
 		var envs_url = url + "/v1/organizations/" + org + "/environments";
 		grunt.verbose.writeln(envs_url);
 		grunt.file.mkdir(filepath);
@@ -52,6 +53,12 @@ module.exports = function(grunt) {
 						{
 							grunt.log.error(error);
 						}
+						done_count++;
+						if (done_count == envs.length)
+						{
+							grunt.log.ok('Exported ' + done_count + ' environment KVMs.');
+							done();
+						}						
 					}.bind( {env_url: env_url, env: env})).auth(userid, passwd, true);
 				}
 			}
@@ -63,7 +70,6 @@ module.exports = function(grunt) {
 
 
 		}).auth(userid, passwd, true);
-		var done = this.async();
 	});
 
 	grunt.registerMultiTask('importEnvKVM', 'Import all env-kvm to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
