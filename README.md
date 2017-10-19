@@ -76,7 +76,7 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 
 6.	Run `grunt` to run all the grunt tasks.
 
- ![](image/tasks.png "")
+ ![](image/tasks.png)
 
 
 ## Usage
