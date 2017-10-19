@@ -76,7 +76,7 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 
 6.	Run `grunt` to run all the grunt tasks.
 
- ![](blob/master/image/tasks.png)
+ ![](image/tasks.png "")
 
 
 ## Usage
@@ -87,7 +87,7 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 ```	
 	The switch `-v` is for verbose mode. The following folder structure with data will be created in your current directory.
 
- ![](blob/master/image/export.png)
+ ![](image/export.png)
 
 
 ### To import Developers
@@ -123,10 +123,10 @@ The above command will read the input/devs.csv file and generate the developer j
 
 A sample devs.csv file is shown below.
 
-![](blob/master/image/devs_csv.png)
+![](image/devs_csv.png)
 
 This will create a corresponding json in the data/devs/mqb2btools@whatever.com, as shown below.
 
-![](blob/master/image/dev_json.png)
+![](image/dev_json.png)
 
 You can also import Apps from a csv file in a similar way. Take a look at the sample apps.csv in the input folder.
