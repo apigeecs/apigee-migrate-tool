@@ -1,3 +1,4 @@
+
 var apigee = require('./config.js');
 module.exports = function(grunt) {
 
@@ -103,9 +104,9 @@ module.exports = function(grunt) {
   grunt.loadTasks('tasks');
 
   grunt.registerTask('default', ['availabletasks']);
-  grunt.registerTask('deleteAll', ['warn','deleteProducts','deleteDevs','deleteApps','deleteKeys','deleteProxies','deleteSharedFlows', 'deleteEnvKVM', 'deleteOrgKVM', 'deleteProxyKVM']);
-  grunt.registerTask('exportAll', ['exportDevs','exportProducts','exportApps','exportProxies','exportSharedFlows','exportOrgKVM','exportEnvKVM','exportProxyKVM']);
-  grunt.registerTask('importAll', ['importSharedFlows','importProxies','importDevs','importProducts', 'importApps','importKeys', 'importOrgKVM', 'importEnvKVM', 'importProxyKVM']);
+  grunt.registerTask('deleteAll', ['warn', 'deleteApps', 'deleteDevs', 'deleteProducts', 'deleteProxies', 'deleteSharedFlows', 'deleteEnvKVM', 'deleteOrgKVM', 'deleteProxyKVM', 'deleteKeys']);
+  grunt.registerTask('exportAll', ['exportProxies', 'exportProducts', 'exportDevs', 'exportApps', 'exportSharedFlows','exportOrgKVM','exportEnvKVM','exportProxyKVM']);
+  grunt.registerTask('importAll', ['importProxies', 'importProducts', 'importDevs', 'importApps', 'importSharedFlows','importOrgKVM', 'importEnvKVM', 'importProxyKVM', 'importKeys']);
 
   grunt.registerTask('warn', 'Display Warning', function() {
       var readline = require('readline');

@@ -111,9 +111,14 @@ module.exports = function(grunt) {
 				    grunt.verbose.writeln("Keys migrated for app " + app.name);
 				    
 				});
-				callback();
+                // callback();
+    			if (done_count == credentials.length)
+    			{
+    				grunt.log.ok('Processed ' + done_count + ' keys');
+    				done();
+    			}
+    			callback();			
 			};
-			
 		});
 		var done = this.async();
 	});

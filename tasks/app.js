@@ -151,12 +151,6 @@ module.exports = function(grunt) {
 				  	grunt.verbose.writeln('Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body);
 				  	if (error || status!=200 )
 					  	grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body); 
-					if (done_count == files.length)
-						{
-							grunt.log.ok('Processed ' + done_count + ' apps');
-							done();
-						}
-						callback();
 					}.bind( {delete_url: delete_url}) ).auth(userid, passwd, true);
 		      	  	// END of Key DELETE
 		      	  }
@@ -171,10 +165,13 @@ module.exports = function(grunt) {
 					grunt.log.error("ERROR - from App URL : " + app_url );
 					grunt.log.error(body);
 				}
-
+				if (done_count == files.length)
+				{
+					grunt.log.ok('Processed ' + done_count + ' apps');
+					done();
+				}
+				callback();
 			}.bind( {app_url: app_url}) ).auth(userid, passwd, true);	
-
-
 		});
 		var done = this.async();
 	});
