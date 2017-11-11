@@ -5,6 +5,7 @@ This is a tool for migrating configuration information and entities from one Api
 - Export data from an org
   - Developers
   - Proxies (latest version)
+  - Shared flows
   - Products
   - Apps
   - App Keys
@@ -12,6 +13,7 @@ This is a tool for migrating configuration information and entities from one Api
 - Import data to an org
   - Developers
   - Proxies (latest version) and deploy them 
+  - Shared flows
   - Products
   - Apps
   - App Keys
