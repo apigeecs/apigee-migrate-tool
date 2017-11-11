@@ -50,7 +50,7 @@ module.exports = function(grunt) {
 						done_count++;
 						if (done_count == proxies.length)
 						{
-							grunt.log.ok('Exported ' + done_count + ' proxies');
+							grunt.log.ok('Exported ' + done_count + ' proxies.');
 							done();
 						}
 					}).auth(userid, passwd, true);

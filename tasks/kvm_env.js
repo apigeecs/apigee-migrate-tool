@@ -14,7 +14,7 @@ module.exports = function(grunt) {
 		var done_count =0;
 		var done = this.async();
 		var envs_url = url + "/v1/organizations/" + org + "/environments";
-        
+		var done = this.async();
 		grunt.verbose.writeln(envs_url);
 		grunt.file.mkdir(filepath);
         
@@ -59,12 +59,12 @@ module.exports = function(grunt) {
 							grunt.log.error(error);
 						}
 						done_count++;
-						if (done_count == envs.length)
+						if (done_count == kvms.length)
 						{
-							grunt.log.ok('Exported ' + done_count + ' environment KVMs.');
+							grunt.log.ok('Exported ' + done_count + ' kvms');
 							done();
 						}
-                    }.bind( {env_url: env_url, env: env})).auth(userid, passwd, true);
+					}.bind( {env_url: env_url, env: env})).auth(userid, passwd, true);
 				}
 			}
 			else
