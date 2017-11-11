@@ -12,7 +12,6 @@ module.exports = function(grunt) {
 		var fs = require('fs');
 		var filepath = grunt.config.get("exportSharedFlows.dest.data");
 		var done_count =0;
-        // var done = this.async();
 		grunt.verbose.write("Getting shared flows..." + url);
 		url = url + "/v1/organizations/" + org + "/sharedflows";
 
@@ -39,7 +38,6 @@ module.exports = function(grunt) {
 						    request(shared_flow_download_url).auth(userid, passwd, true)
 							  .pipe(fs.createWriteStream(filepath + "/" + shared_flow_detail.name + '.zip'))
 							  .on('close', function () {
-							    //grunt.verbose.writeln('Shared flow File written!');
 							  });
 						}
 						else
