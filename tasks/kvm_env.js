@@ -13,6 +13,7 @@ module.exports = function(grunt) {
 		var filepath = grunt.config.get("exportEnvKVM.dest.data");
 		var done_count =0;
 		var envs_url = url + "/v1/organizations/" + org + "/environments";
+		var done = this.async();
 		grunt.verbose.writeln(envs_url);
 		grunt.file.mkdir(filepath);
 		request(envs_url, function (env_error, env_response, env_body) {
@@ -51,6 +52,12 @@ module.exports = function(grunt) {
 						else
 						{
 							grunt.log.error(error);
+						}
+						done_count++;
+						if (done_count == kvms.length)
+						{
+							grunt.log.ok('Exported ' + done_count + ' kvms');
+							done();
 						}
 					}.bind( {env_url: env_url, env: env})).auth(userid, passwd, true);
 				}
