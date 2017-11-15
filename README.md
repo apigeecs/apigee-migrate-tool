@@ -1,28 +1,6 @@
 # Apigee Organization Data Migration Tool
 
-This is a tool for migrating configuration information and entities from one Apigee Edge organization to another. With the tool, you can:
-
-- Export data from an org
-  - Developers
-  - Proxies (latest version)
-  - Shared flows
-  - Products
-  - Apps
-  - App Keys
-  - KVM (Org and Env)
-- Import data to an org
-  - Developers
-  - Proxies (latest version) and deploy them 
-  - Shared flows
-  - Products
-  - Apps
-  - App Keys
-  - KVM (coming soon)
-- Import data from a csv file to an org
-  - Developers
-  - Apps
-  - App Keys
-  - KVM (Org and Env)
+Use this tool to migrate configuration information and entities from one Apigee Edge organization to another. 
 
 **IMPORTANT**
 - Make a backup of both systems using the backup scripts provided with the OPDK before running this tool.
@@ -32,50 +10,69 @@ This is a tool for migrating configuration information and entities from one Api
 
 License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LICENSE) 
 
-## Installation
+## Data migrated
 
-1.	Download and Install node at http://nodejs.org/download/.
+With the tool, you can import and export data about:
+- developers
+- proxies (latest version)
+- shared flows
+- products
+- apps
+- app keys
+- KVMs (org and env)
 
-2.	Open a command prompt and install grunt using the command.
+You can also import the following kinds of data from a CSV file to an Apigee org:
+  - Developers
+  - Apps
+  - App Keys
+  - KVM (Org and Env)
 
-	```
-	npm install -g grunt-cli
-	```
+## Data not migrated
 
-3.	Download the tool or git clone the repo.
+**Please note** that the following entities won't be migrated as part of this tool. In most cases, you'll need to migrate these manually using the Apigee Edge console. For more on migrating these, see the Apigee [documentation on org data migration](https://docs.apigee.com/api-services/content/migrating-data-apigee-trial-org).
+ - Cache resources and cached values.
+ - Environment resources such as target servers, virtualhosts, and keystores.
+ - KVM entries for "encrypted" key-value maps. Encrypted values can't be retrieved using the management API. Make a note of the values you're using in your old org, then add these values manually to the new org.
+ - Organization or environment level resources such as .jar files, .js files, and so on.
+ - Flow hooks. You can use the UI to download these and import them into the new org.
 
-4.	Install the node dependencies. 
+## Installing the tool
 
-	```
-	npm install
-	```
-
-5.	Edit the config.js file to suit your environment.
-
-	```
-	module.exports = {
-
-		from: {
-			version: 'R22',
-			url: 'http://mgmt-server’,
-			userid: 'user-id’,
-			passwd: 'your-password',
-			org: 'your-org',
-			env: 'your-env'
-		},
-		to: {
-			version: '14.0.7',
-			url: 'http://mgmt-server’,
-			userid: 'user-id’,
-			passwd: 'your-password',
-			org: 'your-org',
-			env: 'your-env'
-		}
-	} ;
-	```
-
-6. Run `grunt` to run all the grunt tasks.
-
+1. Download and install Node.js at http://nodejs.org/download/.
+1. Open a command prompt and install Grunt using the command.
+    ```
+    npm install -g grunt-cli
+    ```
+1. To get the tool, clone this repository.
+    ```
+    command
+    ```
+1. Install the node dependencies. 
+    ```
+    npm install
+    ```
+1. Edit the config.js file to suit your environment.
+    ```
+    module.exports = {
+        from: {
+            version: 'R22',
+            url: 'http://mgmt-server’,
+            userid: 'user-id’,
+            passwd: 'your-password',
+            org: 'your-org',
+            env: 'your-env'
+        },
+        to: {
+            version: '14.0.7',
+            url: 'http://mgmt-server’,
+            userid: 'user-id’,
+            passwd: 'your-password',
+            org: 'your-org',
+            env: 'your-env'
+        }
+    } ;
+    ```
+1. Run `grunt` to run all the grunt tasks.
    ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/tasks.png)
 
 
