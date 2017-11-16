@@ -55,6 +55,13 @@ You can also import the following kinds of data from a CSV file to an Apigee org
 ## Using the tool to migrate an org
 To use the tool, you configure it with information about your orgs, then run tasks to import or export specific kinds of org data.
 
+### Before you get started
+
+Before you start migrating data, be sure to do the following to ensure that your org is in a stable state when migrating.
+
+- Freeze revisions on proxies in the org you're exporting from. 
+- Pause the process of adding new proxies or features.
+
 ### Configuring the tool for your orgs
 
 Before you run commands to export and import data, you need to configure the migration tool to access your Apigee organizations.
