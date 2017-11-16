@@ -22,10 +22,10 @@ With the tool, you can import and export data about:
 - KVMs (org and env)
 
 You can also import the following kinds of data from a CSV file to an Apigee org:
-  - Developers
-  - Apps
-  - App Keys
-  - KVM (Org and Env)
+  - developers
+  - apps
+  - app Keys
+  - KVMs (org and env)
 
 ## Data not migrated
 
@@ -39,84 +39,131 @@ You can also import the following kinds of data from a CSV file to an Apigee org
 ## Installing the tool
 
 1. Download and install Node.js at http://nodejs.org/download/.
-1. Open a command prompt and install Grunt using the command.
+1. Open a command prompt and install Grunt using the `npm` command.
     ```
     npm install -g grunt-cli
     ```
 1. To get the tool, clone this repository.
     ```
-    command
+    git clone https://github.com/apigeecs/apigee-migrate-tool.git
     ```
-1. Install the node dependencies. 
+1. Install the Node.js dependencies that the tool requires.
     ```
     npm install
     ```
-1. Edit the config.js file to suit your environment.
+
+## Using the tool to migrate an org
+- configure
+- commands
+
+### Configuring the tool for your orgs
+
+Before you run commands to export and import data, you need to configure the migration tool to access your Apigee organizations.
+
+In the root directory of the repository you cloned, you'll find a config.js file. Edit that file to add values specific to your old and new orgs. Add the following kinds of information for each of your orgs -- the one you're exporting from and the one you're importing to.
+
+Property | Description
+--- | ---
+version | The version of the data to import or export,
+url | URL for the management server where the proxies and other data are hosted. For example, this might be https://api.enterprise.apigee.com
+userid | Username for a user with permission to log in to your org
+passwd | Password for a user with permission to log in to your org
+org | The organization to export from or import to
+env | The environment to export from or import to
+
+    Here's an example of an edited config.js:
+
+	
     ```
     module.exports = {
         from: {
-            version: 'R22',
-            url: 'http://mgmt-server’,
-            userid: 'user-id’,
-            passwd: 'your-password',
-            org: 'your-org',
-            env: 'your-env'
+			version: '1',
+			url: 'https://api.enterprise.apigee.com',
+			userid: 'me@example.com',
+			passwd: 'mypassword',
+			org: 'my-old-org',
+			env: 'my-old-env'
         },
         to: {
-            version: '14.0.7',
-            url: 'http://mgmt-server’,
-            userid: 'user-id’,
-            passwd: 'your-password',
-            org: 'your-org',
-            env: 'your-env'
+			version: '1',
+			url: 'https://api.enterprise.apigee.com',
+			userid: 'me@example.com',
+			passwd: 'mypassword',
+			org: 'my-new-org',
+			env: 'my-new-env'
         }
     } ;
     ```
-1. Run `grunt` to run all the grunt tasks.
-   ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/tasks.png)
 
+## Using the tool
 
-## Usage
+Once you've configured the tool with information about your orgs, you can run it to export and import data. To use the tool, open a command prompt and change to the root directory of the repository you cloned.
 
-### To export all data types 
+To try out the tool, you can run the exportAll task to export all of the supported kinds of data from the old org you specified in configuration. (The switch `-v` is for verbose mode.)
+
 ```
 grunt exportAll -v
 ```	
-The switch `-v` is for verbose mode. The following folder structure with data will be created in your current directory.
 
- ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/export.png)
+The following folder structure with data will be created in your current directory.
 
+![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/export.png)
 
-### To import Developers
+> You may want to redirect standard out to log files, so you can review them later.
 
+### Running migration tasks
+
+You can run the export and import tasks separately for each kind of org data. When you do, be sure to run them in the proper sequence. Some kinds of data are dependent on the presence of others in order to succesfully import or export.
+
+#### Sequence for exporting data
 ```
-grunt importDevs -v 
+grunt exportProducts
+grunt exportDevs
+grunt exportApps
+grunt exportProxies
+grunt exportSharedFlows
+grunt exportProxyKVM
+grunt exportEnvKVM
+grunt exportOrgKVM
 ```
 
-You may want to redirect standard out to log files, so they can be reviewed later. It will import all the developers from the data/devs folder to the org specified in the *to* configuration in your config.js file.
-
-### When importing, run tasks in the following sequence
-
- `importProxies` -> `importDevs` -> `importProducts` -> `importApps` -> `importKeys`
+#### Sequence for importing data
+```
+grunt importProxies
+grunt importSharedFlows
+grunt importDevs
+grunt importProducts
+grunt importApps
+grunt importKeys
+grunt importProxyKVM
+grunt importEnvKVM
+grunt importOrgKVM
+```
 
 By default the `importDevs`, `importApps`, and `importKeys` tasks import all the entities from the respective data folder. 
 
-### To import a specific entity you can pass an argument `src` as shown below.
+### Importing a specific entity
+
+To import a specific entity, use the `src` argument to specify which entity data you want to import.
 
 ```
 grunt importApps -v --src=./data/apps/*/App*
 ```
 	
-The above command will import all apps starting with "App" irrespective of the developer the app belongs to. 
+
+The preceding command will import all apps starting with "App" irrespective of the developer the app belongs to.
+
 For more details on other globbing patterns supported please refer to [Globbing Pattern](http://gruntjs.com/configuring-tasks#globbing-patterns).
 
-### To import Developers or Apps from a csv file.
+### Importing developer or app data from a CSV file
+
+You can import developer or app data from a CSV file by using either the readCSVDevs or readCSVApps command, as shown here.
 
 ```
 grunt readCSVDevs -v 
 ```
 
-The above command will read the input/devs.csv file and generate the developer json files in the data/devs folder. These developers can then be imported to your org using the importDevs command shown earlier. 
+The preceding command will read the file at input/devs.csv to generate the developer JSON files in the data/devs folder. These developers can then be imported to your org using the `importDevs` command.
 
 A sample devs.csv file is shown below.
 
@@ -125,5 +172,3 @@ A sample devs.csv file is shown below.
 This will create a corresponding json in the data/devs/mqb2btools@whatever.com, as shown below.
 
 ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/dev_json.png)
-
-You can also import Apps from a csv file in a similar way. Take a look at the sample apps.csv in the input folder.
