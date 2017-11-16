@@ -53,8 +53,7 @@ You can also import the following kinds of data from a CSV file to an Apigee org
     ```
 
 ## Using the tool to migrate an org
-- configure
-- commands
+To use the tool, you configure it with information about your orgs, then run tasks to import or export specific kinds of org data.
 
 ### Configuring the tool for your orgs
 
