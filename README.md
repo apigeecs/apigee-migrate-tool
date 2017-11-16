@@ -8,6 +8,8 @@ Use this tool to migrate configuration information and entities from one Apigee 
 - All imports and delete tasks work on the “to” configurations in config.js. 
 - **Deletes made using these scripts cannot be rolled back. Please use delete commands with caution.**
 
+> The migration tool supports only basic authentication when authenticating with your Apigee orgs. If you're using 2-factor authentication or bearer tokens, you may need to temporarily disable that requirement in order to use the tool.
+
 License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LICENSE) 
 
 ## Data migrated
