@@ -76,7 +76,7 @@ In the root directory of the repository you cloned, you'll find a config.js file
 
 Property | Description
 --- | ---
-version | The version of the data to import or export,
+version | The version of Apigee Edge
 url | URL for the management server where the proxies and other data are hosted. For example, this might be https://api.enterprise.apigee.com
 userid | Username for a user with permission to log in to your org
 passwd | Password for a user with permission to log in to your org
