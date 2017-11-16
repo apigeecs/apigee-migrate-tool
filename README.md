@@ -53,7 +53,13 @@ You can also import the following kinds of data from a CSV file to an Apigee org
     ```
 
 ## Using the tool to migrate an org
-To use the tool, you configure it with information about your orgs, then run tasks to import or export specific kinds of org data.
+
+Migrating includes the following steps:
+
+1. Collect information about the orgs you're migrating from and importing to.
+1. Configure the tool with information about your orgs.
+1. Run grunt tasks in the migration tool to export org data to your local drive, then import the data to another org.
+1. Verify that the data you migrated works as it should in the new org.
 
 ### Before you get started
 
@@ -104,6 +110,12 @@ env | The environment to export from or import to
 ## Using the tool
 
 Once you've configured the tool with information about your orgs, you can run it to export and import data. To use the tool, open a command prompt and change to the root directory of the repository you cloned.
+
+To see a list of all the tasks available with the tool, run the grunt command.
+
+```
+grunt
+```	
 
 To try out the tool, you can run the exportAll task to export all of the supported kinds of data from the old org you specified in configuration. (The switch `-v` is for verbose mode.)
 
@@ -178,3 +190,11 @@ A sample devs.csv file is shown below.
 This will create a corresponding json in the data/devs/mqb2btools@whatever.com, as shown below.
 
 ![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/dev_json.png)
+
+## Verify entities in your new org
+
+After you've imported to your new org, you'll want to verify that all the pieces you need are there. For example, you'll want to:
+
+- Make sure all the pieces you imported -- proxies, shared flows, KVMs, and so on -- are in your new org.
+- Make sure you manually migrate the pieces that couldn't be migrated with the tool. See the section at the beginning of this topic for a list.
+- Deploy and test your proxies using a client to ensure that everything works as it should.
