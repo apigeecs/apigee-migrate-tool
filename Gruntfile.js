@@ -1,3 +1,4 @@
+
 var apigee = require('./config.js');
 module.exports = function(grunt) {
 
@@ -31,11 +32,17 @@ module.exports = function(grunt) {
     exportProxyKVM: {
        dest: './data/kvm/proxy'       
     },
+    exportSharedFlows: {
+       dest: './data/sharedflows'       
+    },
     exportReports: {
         dest: './data/reports'
-     },
+    },
     importProxies: {
         src: './data/proxies/*.zip'
+    },
+    importSharedFlows: {
+        src: './data/sharedflows/*.zip'
     },
     importProducts: {
         src: 'data/products/*'
@@ -60,7 +67,7 @@ module.exports = function(grunt) {
     },
     importReports: {
         src: './data/reports/*'
-     },
+    },
     deleteKeys: {
         src: 'data/apps/*/*'
     },
@@ -76,6 +83,9 @@ module.exports = function(grunt) {
     deleteProxies: {
         src: './data/proxies/*'
     },
+    deleteSharedFlows: {
+        src: './data/sharedflows/*'
+    },
     deleteOrgKVM: {
         src: './data/kvm/org/*'
     },
@@ -87,7 +97,7 @@ module.exports = function(grunt) {
     },
     deleteReports: {
         src: './data/reports/*'
-     },
+    },
     readCSVDevs: {
         in_devs: './input/devs.csv',
         out_devs: './data/devs/'   
@@ -103,9 +113,9 @@ module.exports = function(grunt) {
   grunt.loadTasks('tasks');
 
   grunt.registerTask('default', ['availabletasks']);
-  grunt.registerTask('exportAll', ['exportDevs','exportProducts','exportApps', 'exportProxies', 'exportOrgKVM', 'exportEnvKVM', 'exportProxyKVM', 'exportReports']);
-  grunt.registerTask('importAll', ['importProxies','importDevs','importProducts', 'importApps','importKeys', 'importOrgKVM', 'importEnvKVM', 'importProxyKVM', 'importReports']);
-  grunt.registerTask('deleteAll', ['warn','deleteKeys','deleteApps','deleteProducts', 'deleteDevs', 'deleteProxies', 'deleteOrgKVM', 'deleteEnvKVM', 'deleteProxyKVM', 'deleteReports']);
+  grunt.registerTask('deleteAll', ['warn', 'deleteApps', 'deleteDevs', 'deleteProducts', 'deleteProxies', 'deleteSharedFlows', 'deleteEnvKVM', 'deleteOrgKVM', 'deleteProxyKVM', 'deleteKeys', 'deleteReports']);
+  grunt.registerTask('exportAll', ['exportProxies', 'exportProducts', 'exportDevs', 'exportApps', 'exportSharedFlows','exportOrgKVM','exportEnvKVM','exportProxyKVM', 'exportReports']);
+  grunt.registerTask('importAll', ['importProxies', 'importProducts', 'importDevs', 'importApps', 'importSharedFlows','importOrgKVM', 'importEnvKVM', 'importProxyKVM', 'importKeys', 'importReports']);
 
   grunt.registerTask('warn', 'Display Warning', function() {
       var readline = require('readline');
@@ -114,7 +124,7 @@ module.exports = function(grunt) {
         output: process.stdout
       });
       var done = this.async();
-      rl.question('THIS SCRIPT WILL DELETE ONE OR MORE RESOURCES will be deleted from the org - ' + apigee.to.org + ' [' + apigee.to.version + '].' + ' THIS ACTION CANNOT BE ROLLBACK. Do you want to continue (yes/no) ? ', function(answer) {
+      rl.question('THIS SCRIPT WILL DELETE ONE OR MORE RESOURCES FROM THE ORG - ' + apigee.to.org + ' [' + apigee.to.version + '].' + ' THIS ACTION CANNOT BE ROLLED BACK. Do you want to continue (yes/no) ? ', function(answer) {
         if (answer.match(/^y(es)?$/i))
           done(true);
         else

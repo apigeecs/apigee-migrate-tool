@@ -14,24 +14,30 @@ module.exports = function(grunt) {
 		var done_count =0;
 		var done = this.async();
 		var envs_url = url + "/v1/organizations/" + org + "/environments";
+		var done = this.async();
 		grunt.verbose.writeln(envs_url);
 		grunt.file.mkdir(filepath);
+        
 		request(envs_url, function (env_error, env_response, env_body) {
 			if (!env_error && env_response.statusCode == 200) {
 				grunt.verbose.writeln(env_body);
 			    var envs =  JSON.parse(env_body);
+                
 			    for (var j = 0; j < envs.length; j++) {
 			    	var env = envs[j];
 			    	var env_url = url + "/v1/organizations/" + org + "/environments/" + env + "/keyvaluemaps";
+                    
 			    	grunt.verbose.writeln("Env KVM URL: " + env_url);
+                    
 				    request(env_url, function (error, response, body) {
 						if (!error && response.statusCode == 200) {
-							//grunt.verbose.write(body);
+                            grunt.verbose.write(body);
 						    kvms =  JSON.parse(body);   						    
 						    for (var i = 0; i < kvms.length; i++) {
 						    	var env_kvm_url = this.env_url + "/" + kvms[i];	
 						    	grunt.verbose.writeln("KVM URL : " + env_kvm_url);
 						    	var env = this.env;
+                                
 						    	//Call kvm details
 								request(env_kvm_url, function (error, response, body) {
 									if (!error && response.statusCode == 200) {
@@ -44,21 +50,20 @@ module.exports = function(grunt) {
 									{
 										grunt.log.error(error);
 									}
-								}.bind( {env: env})).auth(userid, passwd, true);
+                                }.bind( {env: env})).auth(userid, passwd, true);
 						    	// End kvm details
-						    };
-						    
+						    };						    
 						} 
 						else
 						{
 							grunt.log.error(error);
 						}
 						done_count++;
-						if (done_count == envs.length)
+						if (done_count == kvms.length)
 						{
-							grunt.log.ok('Exported ' + done_count + ' environment KVMs.');
+							grunt.log.ok('Exported ' + done_count + ' kvms');
 							done();
-						}						
+						}
 					}.bind( {env_url: env_url, env: env})).auth(userid, passwd, true);
 				}
 			}
@@ -66,9 +71,6 @@ module.exports = function(grunt) {
 			{
 				grunt.log.error(error);
 			}
-
-
-
 		}).auth(userid, passwd, true);
 	});
 

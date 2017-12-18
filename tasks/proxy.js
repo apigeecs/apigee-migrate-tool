@@ -13,12 +13,12 @@ module.exports = function(grunt) {
 		var filepath = grunt.config.get("exportProxies.dest.data");
 		var done_count =0;
 		var done = this.async();
+        // var done = this.async();
 		grunt.verbose.write("getting proxies..." + url);
 		url = url + "/v1/organizations/" + org + "/apis";
 
 		request(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
-				//grunt.log.write(body);
 			    proxies =  JSON.parse(body);
 			   
 			    for (var i = 0; i < proxies.length; i++) {
@@ -30,42 +30,38 @@ module.exports = function(grunt) {
 						if (!error && response.statusCode == 200) {
 							grunt.verbose.write(body);
 						    var proxy_detail =  JSON.parse(body);
-						    var proxy_file = filepath + "/" + proxy_detail.name;
+                            // var proxy_file = filepath + "/" + proxy_detail.name;
 						    // gets max revision - May not be the deployed version
 						    var max_rev = proxy_detail.revision[proxy_detail.revision.length -1];
 
 						    var proxy_download_url = url + "/" + proxy_detail.name + "/revisions/" + max_rev + "?format=bundle";
-						    grunt.verbose.writeln ("Fetching proxy bundle  : " + proxy_download_url);
+						    grunt.verbose.writeln ("\nFetching proxy bundle  : " + proxy_download_url);
 
 						    request(proxy_download_url).auth(userid, passwd, true)
 							  .pipe(fs.createWriteStream(filepath + "/" + proxy_detail.name + '.zip'))
 							  .on('close', function () {
 							    //grunt.verbose.writeln('Proxy File written!');
-							  });
+							});
 						}
 						else
 						{
 							grunt.log.error(error);
 						}
-						
 						done_count++;
 						if (done_count == proxies.length)
 						{
-							grunt.log.ok('Exported ' + done_count + ' proxies');
+							grunt.log.ok('Exported ' + done_count + ' proxies.');
 							done();
 						}
-						
 					}).auth(userid, passwd, true);
 			    	// End proxy details
-			    }; 
-			    
+			    }; 			    
 			} 
 			else
 			{
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
-
 	});
 
 	grunt.registerMultiTask('importProxies', 'Import all proxies to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
@@ -199,7 +195,7 @@ module.exports = function(grunt) {
 				{
 					grunt.log.error(error);
 				}
-			}).auth(userid, passwd, true);
+			}.bind( {proxy_url: proxy_url}) ).auth(userid, passwd, true);
 	});
 
 	grunt.registerTask('undeployProxies', 'UnDeploy revision 1 on all proxies for org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {

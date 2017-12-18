@@ -53,15 +53,13 @@ module.exports = function(grunt) {
 						{
 							grunt.log.error(error);
 						}
-						
 						done_count++;
 						if (done_count == proxies.length)
 						{
 							grunt.log.ok('Exported ' + done_count + ' proxy KVMs.');
 							done();
-						}						
+						}
 					}.bind( {proxy_url: proxy_url, proxy: proxy})).auth(userid, passwd, true);
-
 				}
 			}
 			else
@@ -69,7 +67,6 @@ module.exports = function(grunt) {
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
-		var done = this.async();
 	});
 
 
