@@ -26,3 +26,7 @@ node_modules
 
 # Users Environment Variables
 .lock-wscript
+
+# Exported configuration, if any
+data
+package-lock.json
