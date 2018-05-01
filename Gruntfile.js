@@ -35,11 +35,17 @@ module.exports = function(grunt) {
     exportSharedFlows: {
        dest: './data/sharedflows'       
     },
+    exportFlowHooks: {
+       dest: './data/flowhooks/flow_hook_config'       
+    },
     importProxies: {
         src: './data/proxies/*.zip'
     },
     importSharedFlows: {
         src: './data/sharedflows/*.zip'
+    },
+    importFlowHooks: {
+       src: './data/flowhooks/flow_hook_config'       
     },
     importProducts: {
         src: 'data/products/*'
@@ -104,9 +110,9 @@ module.exports = function(grunt) {
   grunt.loadTasks('tasks');
 
   grunt.registerTask('default', ['availabletasks']);
-  grunt.registerTask('deleteAll', ['warn', 'deleteApps', 'deleteDevs', 'deleteProducts', 'deleteProxies', 'deleteSharedFlows', 'deleteEnvKVM', 'deleteOrgKVM', 'deleteProxyKVM', 'deleteKeys']);
-  grunt.registerTask('exportAll', ['exportProxies', 'exportProducts', 'exportDevs', 'exportApps', 'exportSharedFlows','exportOrgKVM','exportEnvKVM','exportProxyKVM']);
-  grunt.registerTask('importAll', ['importProxies', 'importProducts', 'importDevs', 'importApps', 'importSharedFlows','importOrgKVM', 'importEnvKVM', 'importProxyKVM', 'importKeys']);
+  grunt.registerTask('deleteAll', ['warn', 'deleteKeys','deleteApps', 'deleteDevs', 'deleteProducts', 'deleteProxies', 'deleteFlowHooks','deleteSharedFlows', 'deleteEnvKVM', 'deleteOrgKVM', 'deleteProxyKVM']);
+  grunt.registerTask('exportAll', ['exportProxies', 'exportProducts', 'exportDevs', 'exportApps', 'exportSharedFlows','exportFlowHooks','exportOrgKVM','exportEnvKVM','exportProxyKVM']);
+  grunt.registerTask('importAll', ['importProxies', 'importProducts', 'importDevs', 'importApps', 'importSharedFlows','importFlowHooks','importOrgKVM', 'importEnvKVM', 'importProxyKVM', 'importKeys']);
 
   grunt.registerTask('warn', 'Display Warning', function() {
       var readline = require('readline');

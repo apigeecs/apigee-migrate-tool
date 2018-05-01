@@ -18,6 +18,7 @@ With the tool, you can import and export data about:
 - developers
 - proxies (latest version)
 - shared flows
+- flow hooks
 - products
 - apps
 - app keys
@@ -36,7 +37,6 @@ You can also import the following kinds of data from a CSV file to an Apigee org
  - Environment resources such as target servers, virtualhosts, and keystores.
  - KVM entries for "encrypted" key-value maps. Encrypted values can't be retrieved using the management API. Make a note of the values you're using in your old org, then add these values manually to the new org.
  - Organization or environment level resources such as .jar files, .js files, and so on.
- - Flow hooks. You can use the UI to download these and import them into the new org.
 
 ## Installing the tool
 
