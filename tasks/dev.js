@@ -1,6 +1,7 @@
 /*jslint node: true */
 var request = require('request');
 var apigee = require('../config.js');
+var async = require('async');
 var devs;
 module.exports = function(grunt) {
 	'use strict';
@@ -10,49 +11,85 @@ module.exports = function(grunt) {
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
 		var filepath = grunt.config.get("exportDevs.dest.data");
-		var done_count =0;
+		var dev_count =0;
+		var done_count = 0;
 
 		grunt.verbose.write("getting developers..." + url);
 		url = url + "/v1/organizations/" + org + "/developers";
 
-		request(url, function (error, response, body) {
-			if (!error && response.statusCode == 200) {
-			    devs =  JSON.parse(body);
-			   
-			    
-			    for (var i = 0; i < devs.length; i++) {
-			    	var dev_url = url + "/" + devs[i];
-			    	grunt.file.mkdir(filepath);
+		var dumpDeveloper = function(email) {
+			var dev_url = url + "/" + email;
+			grunt.verbose.write("getting developer " + dev_url);
 
-			    	//Call developer details
-					request(dev_url, function (error, response, body) {
-						if (!error && response.statusCode == 200) {
-							grunt.verbose.write(body);
-						    var dev_detail =  JSON.parse(body);
-						    var dev_file = filepath + "/" + dev_detail.email;
-						    grunt.file.write(dev_file, body);
-						}
-						else
-						{
-							grunt.log.error(error);
-						}
-						done_count++;
-						if (done_count == devs.length)
-						{
-							grunt.log.ok('Exported ' + done_count + ' developers');
-							done();
-						}
-					}).auth(userid, passwd, true);
-			    	// End Developer details
-			    };
-			    
-			} 
-			else
-			{
-				grunt.log.error(error);
+			//Call developer details
+			request(dev_url, function (error, response, body) {
+				if (!error && response.statusCode == 200) {
+					grunt.verbose.write(body);
+					var dev_detail = JSON.parse(body);
+					var dev_file = filepath + "/" + dev_detail.email;
+					grunt.file.write(dev_file, body);
+					done_count++;
+				}
+				else {
+					if (error)
+						grunt.log.error(error);
+					else
+						grunt.log.error(body);
+				}
+
+			}.bind( {dev_url: dev_url}) ).auth(userid, passwd, true);
+		}
+
+		var iterateOverDevs = function(start, base_url, callback) {
+			var url = base_url;
+
+			if (start) {
+				url += "?startKey=" + encodeURIComponent(start);
 			}
-		}).auth(userid, passwd, true);
+			grunt.verbose.write("getting developers..." + url);
+
+			request(url, function (error, response, body) {
+				if (!error && response.statusCode == 200) {
+					devs = JSON.parse(body);
+					var last = null;
+
+					// detect that the only developer returned is the one we asked to start with; that's the end game.
+					if (devs.length == 1 && devs[0] == start) {
+						grunt.log.ok('Retrieved total of ' + dev_count + ' developers');
+
+						//callback(all_devs);
+
+					} else {
+						dev_count += devs.length;
+
+						for (var i = 0; i < devs.length; i++) {
+							// If there was a 'start', don't do it again, because it was processed in the previous callback.
+							if (!start || devs[i] != start) {
+								callback(devs[i]);
+								last = devs[i];
+							}
+						}
+
+						grunt.log.ok('Retrieved ' + devs.length + ' developers');
+
+						// Keep on calling getDevs() as long as we're getting new developers back
+						iterateOverDevs(last, base_url, callback);
+					}
+				}
+				else {
+					if (error)
+						grunt.log.error(error);
+					else
+						grunt.log.error(body);
+				}
+
+			}).auth(userid, passwd, true);
+		}
+
 		var done = this.async();
+
+		// get All developers
+		iterateOverDevs(null, url, dumpDeveloper);
 	});
 
 
