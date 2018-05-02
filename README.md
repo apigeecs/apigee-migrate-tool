@@ -23,6 +23,7 @@ With the tool, you can import and export data about:
 - apps
 - app keys
 - KVMs (org and env)
+- Reports
 
 You can also import the following kinds of data from a CSV file to an Apigee org:
   - developers
@@ -187,11 +188,11 @@ The preceding command will read the file at input/devs.csv to generate the devel
 
 A sample devs.csv file is shown below.
 
-![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/devs_csv.png)
+![](image/devs_csv.png)
 
 This will create a corresponding json in the data/devs/mqb2btools@whatever.com, as shown below.
 
-![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/dev_json.png)
+![](image/dev_json.png)
 
 ## Verify entities in your new org
 
