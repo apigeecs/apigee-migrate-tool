@@ -409,7 +409,11 @@ SpecStore.prototype.downloadFolderContents = function(folder_uri, path){
                     headers: {
                         "Accept": "application/json, text/plain, */*",
                     }
-                }).pipe(fs.createWriteStream(path + "/" + contents['Doc'][key][0] + "---" + key + ".json"));
+                }, function(err, res, body) {
+                    fs.writeFile(path + "/" + contents['Doc'][key][0] + "---" + key + ".json", body, function(err2){
+                        if (err2) throw err2;
+                    });
+                });
             });
         }
         if(contents['Folder']) {
