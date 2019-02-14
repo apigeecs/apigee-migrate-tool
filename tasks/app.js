@@ -129,124 +129,158 @@ module.exports = function(grunt) {
 		iterateOverDevs(null, url, dumpApps);
 	});
 
-
-
 	grunt.registerMultiTask('importApps', 'Import all apps to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
-		var url = apigee.to.url;
-		var org = apigee.to.org;
-		var userid = apigee.to.userid;
-		var passwd = apigee.to.passwd;
-		var done_count =0;
-		var files;
-		url = url + "/v1/organizations/" + org + "/developers/";
-		var done = this.async();
-		var opts = {flatten: false};
-		var f = grunt.option('src');
-		if (f)
-		{
-			grunt.verbose.writeln('src pattern = ' + f);
-			files = grunt.file.expand(opts,f);
-		}
-		else
-		{
-			files = this.filesSrc;
-		}
+	    var url = apigee.to.url;
+	    var org = apigee.to.org;
+	    var userid = apigee.to.userid;
+	    var passwd = apigee.to.passwd;
+	    var done_count = 0;
+	    var files;
+	    url = url + "/v1/organizations/" + org + "/developers/";
+	    var opts = {
+	        flatten: false
+	    };
+	    var f = grunt.option('src');
+	    if(f) {
+	        grunt.verbose.writeln('src pattern = ' + f);
+	        files = grunt.file.expand(opts, f);
+	    } else {
+	        files = this.filesSrc;
+	    }
 
-		async.eachSeries(files, function (filepath,callback) {
-			console.log(filepath);
-			var folders = filepath.split("/");
-			var dev = folders[folders.length - 2];
-			var content = grunt.file.read(filepath);
-			var app = JSON.parse(content);
-			grunt.verbose.writeln("Creating app : " + app.name + " under developer " + dev);
+	    var done = this.async();
 
-			delete app['appId'];
-			//delete app['status'];
-			delete app['developerId'];
-			delete app['lastModifiedAt'];
-			delete app['lastModifiedBy'];
-			delete app['createdAt'];
-			delete app['createdBy'];
-			//delete app['status'];
-			delete app['appFamily'];
-			delete app['accessType'];
-			delete app['credentials'];
+	    async.eachSeries(files, function(filepath, callback) {
+	        console.log(filepath);
+	        var folders = filepath.split("/");
+	        var dev = folders[folders.length - 2];
+	        var content = grunt.file.read(filepath);
+	        var app = JSON.parse(content);
+	        grunt.verbose.writeln("Creating app : " + app.name + " under developer " + dev);
 
-			grunt.verbose.writeln(JSON.stringify(app));
-			var app_url = url + dev + "/apps";
-			grunt.verbose.writeln("Creating App " + app_url);
+	        var status_done = false;
+	        var delete_done = false;
 
-			request.post({
-			  headers: {'Content-Type' : 'application/json'},
-			  url:     app_url,
-			  body:    JSON.stringify(app)
-			}, function(error, response, body){
-				try{
-				  done_count++;
-				  var cstatus = 999;
-				  if (response)	
-				  	  cstatus = response.statusCode;
-				  if (cstatus == 200 || cstatus == 201)
-				  {
-				  grunt.verbose.writeln('Resp [' + response.statusCode + '] for create app  ' + this.app_url + ' -> ' + body);
-				  var app_resp = JSON.parse(body);
+	        delete app['appId'];
+	        //delete app['status'];
+	        delete app['developerId'];
+	        delete app['lastModifiedAt'];
+	        delete app['lastModifiedBy'];
+	        delete app['createdAt'];
+	        delete app['createdBy'];
+	        //delete app['status'];
+	        delete app['appFamily'];
+	        delete app['accessType'];
+	        delete app['credentials'];
 
-				  if (app['status'] && (app_resp['status'] != app['status']))
-				  {
-					  var status_url = app_url + '/' + app.name + '?action=';
-					  if (app['status'] == 'approved')
-						  status_url += "approve";
-					  else
-						  status_url += "revoke";
+	        grunt.verbose.writeln(JSON.stringify(app));
+	        var app_url = url + dev + "/apps";
+	        grunt.verbose.writeln("Creating App " + app_url);
 
-					  // Set the app status
-					  request.post(status_url, function(error, response, body){
-						  var status = 999;
-						  if (response)
-							  status = response.statusCode;
-						  grunt.verbose.writeln('Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.status_url + ' -> ' + body);
-						  if (error || status!=204)
-							  grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.status_url + ' -> ' + body);
+	        request.post({
+	                headers: {
+	                    'Content-Type': 'application/json'
+	                },
+	                url: app_url,
+	                body: JSON.stringify(app)
+	            },
+	            function(error, response, body) {
+	                try {
+	                    var cstatus = 999;
+	                    if(response)
+	                        cstatus = response.statusCode;
+	                    if(cstatus == 200 || cstatus == 201) {
+	                        grunt.verbose.writeln('Resp [' + response.statusCode + '] for create app  ' + this.app_url + ' -> ' + body);
+	                        var app_resp = JSON.parse(body);
 
-					  }.bind( {dev:dev, status_url: status_url, app_name: app.name}) ).auth(userid, passwd, true);
-				  }
+	                       	// Set app status
+							// grunt.verbose.writeln("KURT app status " + app['status'] + " app_resp status: " + app_resp['status']);
+	                        if (app['status'] && (app_resp['status'] != app['status'])) {
+	                            var status_url = app_url + '/' + app.name + '?action=';
+	                            if(app['status'] == 'approved')
+	                                status_url += "approve";
+	                            else
+	                                status_url += "revoke";
 
-				  var client_key = app_resp.credentials[0].consumerKey;
-				  //grunt.verbose.writeln("deleting key -> " + client_key);
-				  var delete_url = app_url + '/' + app.name + '/keys/' + client_key;
-				  //grunt.verbose.writeln("KEY Delete URL -> " + delete_url);
+	                            // grunt.verbose.writeln('KURT POST status ' + status_url);
+	                            request.post(status_url, function(error, response, body) {
+	                                var status = 999;
+	                                if(response)
+	                                    status = response.statusCode;
+	                                grunt.verbose.writeln('Resp [' + status + '] for app status ' + this.dev + ' - ' + this.app_name + ' - ' + this.status_url + ' -> ' + body);
+	                                if(error || status != 204)
+	                                    grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.status_url + ' -> ' + body);
 
-		          // Delete the key generated when App is created
-		      	  request.del(delete_url,function(error, response, body){
-				    var status = 999;
-				    if (response)	
-				  	  status = response.statusCode;
-				  	grunt.verbose.writeln('Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body);
-				  	if (error || status!=200 )
-					  	grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body); 
-					}.bind( {delete_url: delete_url}) ).auth(userid, passwd, true);
-		      	  	// END of Key DELETE
-		      	  }
-		      	  else
-		      	  {
-		      	  	grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create app  ' + this.app_url + ' -> ' + body);
-		      	  	callback();
-		      	  }
-				}
-				catch(err)
-				{
-					grunt.log.error("ERROR - from App URL : " + app_url );
-					grunt.log.error(body);
-				}
-				if (done_count == files.length)
-				{
-					grunt.log.ok('Processed ' + done_count + ' apps');
-					done();
-				}
-				callback();
-			}.bind( {app_url: app_url}) ).auth(userid, passwd, true);	
-		});
-		var done = this.async();
+	                                // KURT START of fix part1
+	                                // grunt.verbose.writeln('KURT in status response delete_done: ' + delete_done);
+	                                status_done = true;
+	                                if(delete_done) {
+	                                    done_count++;
+	                                    // grunt.verbose.writeln('KURT in status response done_count: ' + done_count);
+	                                    if(done_count == files.length) {
+	                                        grunt.log.ok('Processed ' + done_count + ' apps');
+	                                        done();
+	                                    }
+	                                    callback();
+	                                }
+	                                // KURT END of fix part1
+	                            }.bind({dev: dev,status_url: status_url,app_name: app.name})).auth(userid, passwd, true);
+	                        }
+	                        // KURT START of fix part 2
+	                        else {
+	                            // grunt.verbose.writeln('KURT status else delete_done: ' + delete_done );
+	                            status_done = true;
+	                            if(delete_done) {
+	                                done_count++;
+	                                // grunt.verbose.writeln('KURT status done_count: ' + done_count);
+	                                if(done_count == files.length) {
+	                                    grunt.log.ok('Processed ' + done_count + ' apps');
+	                                    done();
+	                                }
+	                                callback();
+	                            }
+	                        }
+	                        // KURT END of fix part 2
+	                        // END of set App status
+
+	                        // Delete the key generated when App is created
+	                        var client_key = app_resp.credentials[0].consumerKey;
+	                        var delete_url = app_url + '/' + app.name + '/keys/' + client_key;
+
+	                        // grunt.verbose.writeln('KURT DELETE key ' + delete_url);
+	                        request.del(delete_url, function(error, response, body) {
+	                            var status = 999;
+	                            if(response)
+	                                status = response.statusCode;
+	                            grunt.verbose.writeln('Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body);
+	                            if(error || status != 200)
+	                                grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body);
+
+	                            // KURT START of fix part 3
+	                            // grunt.verbose.writeln('KURT in delete response status_done: ' + status_done );
+	                            delete_done = true;
+	                            if(status_done) {
+	                                done_count++;
+	                                // grunt.verbose.writeln('KURT in delete response done_count: ' + done_count);
+	                                if(done_count == files.length) {
+	                                    grunt.log.ok('Processed ' + done_count + ' apps');
+	                                    done();
+	                                }
+	                                callback();
+	                            }
+	                            // KURT END of fix part 3					
+	                        }.bind({delete_url: delete_url})).auth(userid, passwd, true);
+	                        // END of Key DELETE
+	                    } else {
+	                        grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create app  ' + this.app_url + ' -> ' + body);
+	                        callback();
+	                    }
+	                } catch (err) {
+	                    grunt.log.error("ERROR - from App URL : " + app_url);
+	                    grunt.log.error(body);
+	                }
+	            }.bind({app_url: app_url})).auth(userid, passwd, true);
+	    });
 	});
 
 
