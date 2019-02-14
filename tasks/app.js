@@ -194,7 +194,6 @@ module.exports = function(grunt) {
 	                        var app_resp = JSON.parse(body);
 
 	                       	// Set app status
-							// grunt.verbose.writeln("KURT app status " + app['status'] + " app_resp status: " + app_resp['status']);
 	                        if (app['status'] && (app_resp['status'] != app['status'])) {
 	                            var status_url = app_url + '/' + app.name + '?action=';
 	                            if(app['status'] == 'approved')
@@ -202,7 +201,6 @@ module.exports = function(grunt) {
 	                            else
 	                                status_url += "revoke";
 
-	                            // grunt.verbose.writeln('KURT POST status ' + status_url);
 	                            request.post(status_url, function(error, response, body) {
 	                                var status = 999;
 	                                if(response)
@@ -211,28 +209,24 @@ module.exports = function(grunt) {
 	                                if(error || status != 204)
 	                                    grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.status_url + ' -> ' + body);
 
-	                                // KURT START of fix part1
-	                                // grunt.verbose.writeln('KURT in status response delete_done: ' + delete_done);
+	                                // START of fix part1 issue #26
 	                                status_done = true;
 	                                if(delete_done) {
 	                                    done_count++;
-	                                    // grunt.verbose.writeln('KURT in status response done_count: ' + done_count);
 	                                    if(done_count == files.length) {
 	                                        grunt.log.ok('Processed ' + done_count + ' apps');
 	                                        done();
 	                                    }
 	                                    callback();
 	                                }
-	                                // KURT END of fix part1
+	                                // END of fix part1 issue #26
 	                            }.bind({dev: dev,status_url: status_url,app_name: app.name})).auth(userid, passwd, true);
 	                        }
-	                        // KURT START of fix part 2
+	                        // START of fix part 2 issue #26
 	                        else {
-	                            // grunt.verbose.writeln('KURT status else delete_done: ' + delete_done );
 	                            status_done = true;
 	                            if(delete_done) {
 	                                done_count++;
-	                                // grunt.verbose.writeln('KURT status done_count: ' + done_count);
 	                                if(done_count == files.length) {
 	                                    grunt.log.ok('Processed ' + done_count + ' apps');
 	                                    done();
@@ -240,14 +234,13 @@ module.exports = function(grunt) {
 	                                callback();
 	                            }
 	                        }
-	                        // KURT END of fix part 2
+	                        // END of fix part 2 issue #26
 	                        // END of set App status
 
 	                        // Delete the key generated when App is created
 	                        var client_key = app_resp.credentials[0].consumerKey;
 	                        var delete_url = app_url + '/' + app.name + '/keys/' + client_key;
 
-	                        // grunt.verbose.writeln('KURT DELETE key ' + delete_url);
 	                        request.del(delete_url, function(error, response, body) {
 	                            var status = 999;
 	                            if(response)
@@ -256,19 +249,17 @@ module.exports = function(grunt) {
 	                            if(error || status != 200)
 	                                grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body);
 
-	                            // KURT START of fix part 3
-	                            // grunt.verbose.writeln('KURT in delete response status_done: ' + status_done );
+	                            // START of fix part 3 issue #26
 	                            delete_done = true;
 	                            if(status_done) {
 	                                done_count++;
-	                                // grunt.verbose.writeln('KURT in delete response done_count: ' + done_count);
 	                                if(done_count == files.length) {
 	                                    grunt.log.ok('Processed ' + done_count + ' apps');
 	                                    done();
 	                                }
 	                                callback();
 	                            }
-	                            // KURT END of fix part 3					
+	                            // END of fix part 3 issue #26					
 	                        }.bind({delete_url: delete_url})).auth(userid, passwd, true);
 	                        // END of Key DELETE
 	                    } else {
