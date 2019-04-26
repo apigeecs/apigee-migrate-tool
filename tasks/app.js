@@ -24,7 +24,7 @@ module.exports = function(grunt) {
 			//Call developer details
 			request(dev_url, function (dev_error, dev_response, dev_body) {
 				if (!dev_error && dev_response.statusCode == 200) {
-					//grunt.verbose.write(dev_body);
+					// grunt.verbose.write("Dev body = " + dev_body);
 					var dev_detail = JSON.parse(dev_body);
 					var last = dev_detail.email;
 					var dev_folder = filepath + "/" + dev_detail.email;
@@ -94,9 +94,9 @@ module.exports = function(grunt) {
 					var last = null;
 
 					// detect that the only developer returned is the one we asked to start with; that's the end game.
-					if (devs.length == 1 && devs[0] == start) {
+					if ((devs.length == 0) || (devs.length == 1 && devs[0] == start)) {
 						grunt.log.ok('Retrieved total of ' + dev_count + ' developers');
-
+						done();
 					} else {
 						dev_count += devs.length;
 						if (start)
