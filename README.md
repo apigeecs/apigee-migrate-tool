@@ -23,6 +23,7 @@ With the tool, you can import and export data about:
 - apps
 - app keys
 - KVMs (org and env)
+- Reports
 
 You can also import the following kinds of data from a CSV file to an Apigee org:
   - developers
@@ -135,6 +136,8 @@ The following folder structure with data will be created in your current directo
 
 You can run the export and import tasks separately for each kind of org data. When you do, be sure to run them in the proper sequence. Some kinds of data are dependent on the presence of others in order to succesfully import or export.
 
+> Keep in mind that `delete` tasks -- which operate on the "to" org -- require the presence of exported data in this tool's data folder. The `delete` tasks use the exported data to discover what should be deleted from the "to" org. 
+
 #### Sequence for exporting data
 ```
 grunt exportProducts
@@ -187,11 +190,11 @@ The preceding command will read the file at input/devs.csv to generate the devel
 
 A sample devs.csv file is shown below.
 
-![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/devs_csv.png)
+![](image/devs_csv.png)
 
 This will create a corresponding json in the data/devs/mqb2btools@whatever.com, as shown below.
 
-![](https://github.com/shahbagdadi/apigee-migrate-tool/blob/master/image/dev_json.png)
+![](image/dev_json.png)
 
 ## Verify entities in your new org
 
