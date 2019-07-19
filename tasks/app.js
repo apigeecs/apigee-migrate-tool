@@ -16,15 +16,17 @@ module.exports = function(grunt) {
 		var total_apps =0;
 		var dev_url;
 		var done = this.async();
-		grunt.verbose.write("getting developers..." + url);
+		grunt.verbose.writeln("========================= export Apps ===========================" );
+		grunt.verbose.writeln("getting developers..." + url);
 		url = url + "/v1/organizations/" + org + "/developers";
+
 
 		var dumpApps = function(email) {
 			dev_url = url + "/" + email;
 			//Call developer details
 			request(dev_url, function (dev_error, dev_response, dev_body) {
 				if (!dev_error && dev_response.statusCode == 200) {
-					//grunt.verbose.write(dev_body);
+					//grunt.verbose.writeln(dev_body);
 					var dev_detail = JSON.parse(dev_body);
 					var last = dev_detail.email;
 					var dev_folder = filepath + "/" + dev_detail.email;
@@ -36,19 +38,19 @@ module.exports = function(grunt) {
 						if (!app_error && app_response.statusCode == 200) {
 
 							var apps_detail = JSON.parse(app_body);
-							grunt.verbose.write(app_body);
+							grunt.verbose.writeln(app_body);
 							var apps = apps_detail.app;
-							//grunt.verbose.write(apps);
+							//grunt.verbose.writeln(apps);
 							if (apps) {
 								for (var j = 0; j < apps.length; j++) {
 									var app = apps[j];
-									grunt.verbose.writeln(app);
+									grunt.verbose.writeln(JSON.stringify(app));
 									//var file_name  = dev_folder + "/" + app.appId;
 									var file_name = dev_folder + "/" + app.name;
 									grunt.verbose.writeln("writing file: " + file_name);
 									grunt.file.write(file_name, JSON.stringify(app));
-								}
-								;
+									grunt.verbose.writeln('App ' + app.name + ' written!');
+								};
 							}
 							total_apps += apps.length;
 
@@ -59,19 +61,19 @@ module.exports = function(grunt) {
 							}
 						}
 						else {
-							if (error)
-								grunt.log.error(error);
-							else
-								grunt.log.error(body);
+							grunt.verbose.writeln('Error Exporting ' + app.name);
+							grunt.log.error(body);
 						}
 						done_count++;
 						if (done_count == dev_count) {
 							grunt.log.ok('Exported ' + total_apps + ' apps for ' + done_count + ' developers');
+                            grunt.verbose.writeln("================== export Apps DONE()" );
+							done();
 						}
 					}).auth(userid, passwd, true);
 				}
 				else {
-					if (dev_error)
+					if (dev_error )
 						grunt.log.error(dev_error);
 					else
 						grunt.log.error(dev_body);
@@ -86,7 +88,7 @@ module.exports = function(grunt) {
 			if (start) {
 				url += "?startKey=" + encodeURIComponent(start);
 			}
-			grunt.verbose.write("getting developers..." + url);
+			grunt.verbose.writeln("getting developers..." + url);
 
 			request(url, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
@@ -96,7 +98,6 @@ module.exports = function(grunt) {
 					// detect that the only developer returned is the one we asked to start with; that's the end game.
 					if (devs.length == 1 && devs[0] == start) {
 						grunt.log.ok('Retrieved total of ' + dev_count + ' developers');
-
 					} else {
 						dev_count += devs.length;
 						if (start)
@@ -127,6 +128,13 @@ module.exports = function(grunt) {
 		}
 
 		iterateOverDevs(null, url, dumpApps);
+		/*
+		setTimeout(function() {
+		    grunt.verbose.writeln("================== Apps Timeout done" );
+		    done(true);
+		}, 3000);
+		grunt.verbose.writeln("========================= export Apps DONE ===========================" );
+		*/
 	});
 
 	grunt.registerMultiTask('importApps', 'Import all apps to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
