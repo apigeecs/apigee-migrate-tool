@@ -15,8 +15,8 @@ module.exports = function(grunt) {
         var done = this.async();
 
         grunt.verbose.writeln("========================= export Shared Flows ===========================" );
-		grunt.verbose.writeln("Getting shared flows... " + url);
 		url = url + "/v1/organizations/" + org + "/sharedflows";
+        grunt.verbose.writeln("Getting shared flows... " + url);
 
 		request(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
@@ -33,7 +33,7 @@ module.exports = function(grunt) {
     			    	//Call shared flow details
     					request(shared_flow_url, function (error, response, body) {
     						if (!error && response.statusCode == 200) {
-    							grunt.verbose.writeln(body);
+    							grunt.verbose.writeln("SHAREDFLOW " + body);
     						    var shared_flow_detail =  JSON.parse(body);
     						    var shared_flow_file = filepath + "/" + shared_flow_detail.name;
     						    // gets max revision - May not be the deployed version
@@ -65,7 +65,7 @@ module.exports = function(grunt) {
                                     grunt.verbose.writeln("================== export Shared Flows error DONE()" );
                                     done();
                                 } else {
-                                    grunt.verbose.writeln('Error exporting' + shared_flow_detail.name);
+                                    grunt.verbose.writeln('Error exporting: ' + response.statusCode + " URL: " + shared_flow_url);
                                 }
                                 grunt.log.error(error);
                             }
@@ -76,7 +76,7 @@ module.exports = function(grunt) {
 			} 
 			else
 			{
-                grunt.verbose.writeln(error);
+                grunt.verbose.writeln("ERROR getting SharedFlows: " + response.statusCode + " response: " + error);
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
@@ -87,7 +87,6 @@ module.exports = function(grunt) {
         }, 3000);
         grunt.verbose.writeln("========================= export Shared Flows DONE ===========================" );
         */
-
 	});
 
     grunt.registerMultiTask('importSharedFlows', 'Import all shared flows to org ' + 
