@@ -12,56 +12,81 @@ module.exports = function(grunt) {
 		var fs = require('fs');
 		var filepath = grunt.config.get("exportSharedFlows.dest.data");
 		var done_count =0;
-		grunt.verbose.write("Getting shared flows..." + url);
+        var done = this.async();
+
+        grunt.verbose.writeln("========================= export Shared Flows ===========================" );
+		grunt.verbose.writeln("Getting shared flows... " + url);
 		url = url + "/v1/organizations/" + org + "/sharedflows";
 
 		request(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 			    shared_flows =  JSON.parse(body);
-			   
-			    for (var i = 0; i < shared_flows.length; i++) {
-			    	var shared_flow_url = url + "/" + shared_flows[i];
-			    	grunt.file.mkdir(filepath);
+			    if( shared_flows.length == 0 ) {
+                    grunt.verbose.writeln ("exportSharedFlows: No Shared flows");
+                    grunt.verbose.writeln("================== export Shared Flows DONE()" );
+                    done();
+                } else {
+    			    for (var i = 0; i < shared_flows.length; i++) {
+    			    	var shared_flow_url = url + "/" + shared_flows[i];
+    			    	grunt.file.mkdir(filepath);
 
-			    	//Call shared flow details
-					request(shared_flow_url, function (error, response, body) {
-						if (!error && response.statusCode == 200) {
-							grunt.verbose.write(body);
-						    var shared_flow_detail =  JSON.parse(body);
-						    var shared_flow_file = filepath + "/" + shared_flow_detail.name;
-						    // gets max revision - May not be the deployed version
-						    var max_rev = shared_flow_detail.revision[shared_flow_detail.revision.length -1];
+    			    	//Call shared flow details
+    					request(shared_flow_url, function (error, response, body) {
+    						if (!error && response.statusCode == 200) {
+    							grunt.verbose.writeln(body);
+    						    var shared_flow_detail =  JSON.parse(body);
+    						    var shared_flow_file = filepath + "/" + shared_flow_detail.name;
+    						    // gets max revision - May not be the deployed version
+    						    var max_rev = shared_flow_detail.revision[shared_flow_detail.revision.length -1];
 
-						    var shared_flow_download_url = url + "/" + shared_flow_detail.name + "/revisions/" + max_rev + "?format=bundle";
-						    grunt.verbose.writeln ("Fetching shared flow bundle  : " + shared_flow_download_url);
+    						    var shared_flow_download_url = url + "/" + shared_flow_detail.name + "/revisions/" + max_rev + "?format=bundle";
+    						    grunt.verbose.writeln ("Fetching shared flow bundle  : " + shared_flow_download_url);
 
-						    request(shared_flow_download_url).auth(userid, passwd, true)
-							  .pipe(fs.createWriteStream(filepath + "/" + shared_flow_detail.name + '.zip'))
-							  .on('close', function () {
-							  });
-						}
-						else
-						{
-							grunt.log.error(error);
-						}
-						done_count++;
-						if (done_count == shared_flows.length)
-						{
-							grunt.log.ok('Exported ' + done_count + ' shared flows.');
-							done();
-						}
-					}).auth(userid, passwd, true);
-			    	// End shared flow details
-			    }; 
-			    
+    						    request(shared_flow_download_url).auth(userid, passwd, true)
+    							  .pipe(fs.createWriteStream(filepath + "/" + shared_flow_detail.name + '.zip'))
+    							  .on('close', function () {
+
+                                    grunt.verbose.writeln('Shared Flow ' + shared_flow_detail.name + '.zip written!');
+                                    done_count++;
+                                    if (done_count == shared_flows.length)
+                                    {
+                                        grunt.log.ok('Exported ' + done_count + ' shared flows.');
+                                        grunt.verbose.writeln("================== export Shared Flows DONE()" );
+                                        done();
+                                    }
+    							  });
+    						}
+    						else
+                            {
+                                done_count++;
+                                if (done_count == shared_flows.length)
+                                {
+                                    grunt.verbose.writeln('Error exporting ' + done_count + ' shared flows.');
+                                    grunt.verbose.writeln("================== export Shared Flows error DONE()" );
+                                    done();
+                                } else {
+                                    grunt.verbose.writeln('Error exporting' + shared_flow_detail.name);
+                                }
+                                grunt.log.error(error);
+                            }
+    					}).auth(userid, passwd, true);
+    			    	// End shared flow details
+    			    }; 
+			    }
 			} 
 			else
 			{
-                grunt.verbose.write(error);
+                grunt.verbose.writeln(error);
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
-		var done = this.async();
+        /*
+        setTimeout(function() {
+            grunt.verbose.writeln("================== Shared Flows Timeout done" );
+            done(true);
+        }, 3000);
+        grunt.verbose.writeln("========================= export Shared Flows DONE ===========================" );
+        */
 
 	});
 

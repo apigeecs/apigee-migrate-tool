@@ -11,16 +11,18 @@ module.exports = function(grunt) {
 		var passwd = apigee.from.passwd;
 		var filepath = grunt.config.get("exportReports.dest.data");
 		var done_count =0;
+		var done = this.async();
 
-		grunt.verbose.write("getting reports..." + url);
+		grunt.verbose.writeln("========================= export Reports ===========================" );
+		grunt.verbose.writeln("getting reports..." + url);
 		url = url + "/v1/organizations/" + org + "/reports?expand=true";
 
 		request(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
-				grunt.verbose.write(body);
+				grunt.verbose.writeln(body);
 		    reports =  JSON.parse(body).qualifier;
 
-				grunt.file.mkdir(filepath);
+			grunt.file.mkdir(filepath);
 		    for (var i = 0; i < reports.length; i++) {
 		    	var dev_url = url + "/" + reports[i];
 
@@ -31,6 +33,7 @@ module.exports = function(grunt) {
 					if (done_count == reports.length)
 					{
 						grunt.log.ok('Exported ' + done_count + ' reports');
+                        grunt.verbose.writeln("================== export reports DONE()" );
 						done();
 					}
 				}
@@ -40,7 +43,13 @@ module.exports = function(grunt) {
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
-		var done = this.async();
+		/*
+		setTimeout(function() {
+		    grunt.verbose.writeln("================== Reports Timeout done" );
+		    done(true);
+		}, 3000);
+		grunt.verbose.writeln("========================= export Reports DONE ===========================" );
+		*/
 	});
 
 	grunt.registerMultiTask('importReports', 'Import all reports to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
@@ -67,7 +76,7 @@ module.exports = function(grunt) {
 		files.forEach( function(filepath) {
 			console.log(filepath);
 			var content = grunt.file.read(filepath);
-			grunt.verbose.write(url);
+			grunt.verbose.writeln(url);
 			request.post({
 			  headers: {'Content-Type' : 'application/json'},
 			  url:     url,
@@ -110,7 +119,7 @@ module.exports = function(grunt) {
 			var content = grunt.file.read(filepath);
 			var report = JSON.parse(content);
 			var del_url = url + report.name;
-			grunt.verbose.write(del_url);
+			grunt.verbose.writeln(del_url);
 			request.del(del_url, function(error, response, body){
 			  var status = 999;
 			  if (response)

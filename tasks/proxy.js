@@ -13,8 +13,9 @@ module.exports = function(grunt) {
 		var filepath = grunt.config.get("exportProxies.dest.data");
 		var done_count =0;
 		var done = this.async();
-        // var done = this.async();
-		grunt.verbose.write("getting proxies..." + url);
+
+		grunt.verbose.writeln("========================= export Proxies ===========================" );
+		grunt.verbose.writeln("getting proxies..." + url);
 		url = url + "/v1/organizations/" + org + "/apis";
 
 		request(url, function (error, response, body) {
@@ -28,7 +29,7 @@ module.exports = function(grunt) {
 			    	//Call proxy details
 					request(proxy_url, function (error, response, body) {
 						if (!error && response.statusCode == 200) {
-							grunt.verbose.write(body);
+							grunt.verbose.writeln(body);
 						    var proxy_detail =  JSON.parse(body);
                             // var proxy_file = filepath + "/" + proxy_detail.name;
 						    // gets max revision - May not be the deployed version
@@ -40,18 +41,28 @@ module.exports = function(grunt) {
 						    request(proxy_download_url).auth(userid, passwd, true)
 							  .pipe(fs.createWriteStream(filepath + "/" + proxy_detail.name + '.zip'))
 							  .on('close', function () {
-							    //grunt.verbose.writeln('Proxy File written!');
+							    
+							    grunt.verbose.writeln('Proxy ' + proxy_detail.name + '.zip written!');
+							    done_count++;
+								if (done_count == proxies.length)
+								{
+									grunt.log.ok('Exported ' + done_count + ' proxies.');
+                                    grunt.verbose.writeln("================== export proxies DONE()" );
+									done();
+								}
 							});
 						}
 						else
 						{
+							done_count++;
+							if (done_count == proxies.length)
+							{
+								grunt.verbose.writeln('Error exporting ' + done_count + ' proxies.');
+								// done();
+							} else {
+								grunt.verbose.writeln('Error exporting' + proxy_detail.name);
+							}
 							grunt.log.error(error);
-						}
-						done_count++;
-						if (done_count == proxies.length)
-						{
-							grunt.log.ok('Exported ' + done_count + ' proxies.');
-							done();
 						}
 					}).auth(userid, passwd, true);
 			    	// End proxy details
@@ -62,6 +73,14 @@ module.exports = function(grunt) {
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
+		/*
+		setTimeout(function() {
+		    grunt.verbose.writeln("================== Proxies Timeout done" );
+		    done(true);
+		}, 5000);
+		grunt.verbose.writeln("========================= export Proxies DONE ===========================" );
+		*/
+
 	});
 
 	grunt.registerMultiTask('importProxies', 'Import all proxies to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
