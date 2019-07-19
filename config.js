@@ -3,17 +3,17 @@ module.exports = {
 	from: {
 		version: '19.04',
 		url: 'https://api.enterprise.apigee.com',
-		userid: 'orgadmin@compan.com',
-		passwd: 'Secret',
-		org: 'orgnamefrom',
+		userid: 'kurtkanaskie@google.com',
+		passwd: 'Rocky20!9',
+		org: 'kurtkanaskietrainer-trial',
 		env: 'test'
 	},
 	to: {
 		version: '19.04',
 		url: 'https://api.enterprise.apigee.com',
-		userid: 'orgadmin@compan.com',
-		passwd: 'Secret',
-		org: 'orgnameto',
+		userid: 'kurtkanaskie@google.com',
+		passwd: 'Rocky20!9',
+		org: 'kurtkanaskie',
 		env: 'test'
 	}
 } ;
