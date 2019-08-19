@@ -10,48 +10,67 @@ module.exports = function(grunt) {
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
 		var filepath = grunt.config.get("exportOrgKVM.dest.data");
-		var done_count =0;
+		var done_count = 0;
+		var done = this.async();
+
+		grunt.verbose.writeln("========================= export Org KVMs ===========================" );
 
 		url = url + "/v1/organizations/" + org + "/keyvaluemaps";
-		grunt.verbose.write("getting Org kvm ..." + url);
+		grunt.verbose.writeln("getting Org KVMs ..." + url);
 		request(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
-				//grunt.verbose.write(body);
+				grunt.verbose.writeln("Org KVMs: " + body);
 			    kvms =  JSON.parse(body);   
 			    
-			    for (var i = 0; i < kvms.length; i++) {
-			    	var org_kvm_url = url + "/" + kvms[i];
-			    	grunt.file.mkdir(filepath);
+			    if( kvms.length == 0 ) {
+                    grunt.verbose.writeln ("exportOrgKVM: No KVMs");
+                    grunt.verbose.writeln("================== export ORG KVM DONE()" );
+                    done();
+                } else {
+                	for (var i = 0; i < kvms.length; i++) {
+                		// Custom report KVMs have '#'
+				    	var org_kvm_url = url + "/" + encodeURIComponent(kvms[i]);
+				    	grunt.file.mkdir(filepath);
 
-			    	//Call kvm details
-					request(org_kvm_url, function (error, response, body) {
-						if (!error && response.statusCode == 200) {
-							grunt.verbose.write(body);
-						    var kvm_detail =  JSON.parse(body);
-						    var kvm_file = filepath + "/" + kvm_detail.name;
-						    grunt.file.write(kvm_file, body);
-						}
-						else
-						{
-							grunt.log.error(error);
-						}
-						done_count++;
-						if (done_count == kvms.length)
-						{
-							grunt.log.ok('Exported ' + done_count + ' kvms');
-							done();
-						}
-					}).auth(userid, passwd, true);
-			    	// End kvm details
-			    };
-			    
+				    	//Call kvm details
+				    	grunt.verbose.writeln('KVM URL: ' + org_kvm_url );
+						request(org_kvm_url, function (error, response, body) {
+							if (!error && response.statusCode == 200) {
+								grunt.verbose.writeln("Org KVM: " + body);
+							    var kvm_detail =  JSON.parse(body);
+							    var kvm_file = filepath + "/" + kvm_detail.name;
+							    grunt.file.write(kvm_file, body);
+
+							    grunt.verbose.writeln('KVM ' + kvm_detail.name + ' written!');
+							} else {
+								grunt.verbose.writeln('Error ' + response.statusCode + ' exporting ' + error);
+								grunt.log.error(error);
+							}
+							
+							done_count++;
+							if (done_count == kvms.length)
+							{
+								grunt.log.ok('Exported ' + done_count + ' kvms');
+                                grunt.verbose.writeln("================== export ORG KVM DONE()" );
+								done();
+							}
+						}).auth(userid, passwd, true);
+				    	// End kvm details
+				    };
+			    }
 			} 
 			else
 			{
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
-		var done = this.async();
+		/*
+		setTimeout(function() {
+		    grunt.verbose.writeln("================== Org KVMs Timeout done" );
+		    done(true);
+		}, 3000);
+		grunt.verbose.writeln("========================= export Org KVMs DONE ===========================" );
+		*/
 	});
 
 
@@ -78,7 +97,7 @@ module.exports = function(grunt) {
 		files.forEach(function(filepath) {
 			console.log(filepath);
 			var content = grunt.file.read(filepath);
-			grunt.verbose.write(url);	
+			grunt.verbose.writeln(url);	
 			request.post({
 			  headers: {'Content-Type' : 'application/json'},
 			  url:     url,
@@ -123,7 +142,7 @@ module.exports = function(grunt) {
 			var content = grunt.file.read(filepath);
 			var kvm = JSON.parse(content);
 			var del_url = url + kvm.name;
-			grunt.verbose.write(del_url);	
+			grunt.verbose.writeln(del_url);	
 			request.del(del_url, function(error, response, body){
 			  var status = 999;
 			  if (response)	

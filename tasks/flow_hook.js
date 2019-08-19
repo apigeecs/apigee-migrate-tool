@@ -14,35 +14,46 @@ module.exports = function(grunt) {
 		var passwd = apigee.from.passwd;
 		var fs = require('fs');
 		var done_count = 0;
+		var done = this.async();
+
+		grunt.verbose.writeln("========================= export Flow Hooks ===========================" );
+
 		for (var i = 0; i < flow_hook_type.length; i++) {
 			var url = base_url + "/v1/organizations/" + org + "/environments/" + env + "/flowhooks/" + flow_hook_type[i];
-			grunt.verbose.write("Getting flow hook (Type: ", flow_hook_type[i], ")..." + url + "\n");
+			grunt.verbose.writeln("Getting flow hook (Type: ", flow_hook_type[i], ")..." + url + "\n");
 			request(url, function(error, response, body) {
 				if (!error && response.statusCode == 200) {
-					grunt.verbose.write("Processing response for flow hook type: " + this.cur_flow_hook_type + " ...\n")
+					grunt.verbose.writeln("Processing response for flow hook type: " + this.cur_flow_hook_type + " ...\n")
 					var flow_hook_detail = JSON.parse(body);
-					grunt.verbose.write("flow_hook_detail = " + JSON.stringify(flow_hook_detail) + "\n");
+					grunt.verbose.writeln("flow_hook_detail = " + JSON.stringify(flow_hook_detail) + "\n");
 					var shared_flow_name = ("sharedFlow" in flow_hook_detail) ? flow_hook_detail.sharedFlow : "";
 					flow_hook_config[this.cur_flow_hook_type] = shared_flow_name;
 
 				} else {
-					grunt.verbose.write(error);
+					grunt.verbose.writeln(error);
 					grunt.log.error(error);
 				}
 				done_count++;
 				if (done_count == flow_hook_type.length) {
 					// Write the configuration file
 					var flow_hook_file = grunt.config.get("exportFlowHooks.dest.data");
-					grunt.verbose.write("About to write to file: " + flow_hook_file + " - Contents: " + JSON.stringify(flow_hook_config) + "\n");
+					grunt.verbose.writeln("About to write to file: " + flow_hook_file + " - Contents: " + JSON.stringify(flow_hook_config) + "\n");
 					grunt.file.write(flow_hook_file, JSON.stringify(flow_hook_config));
 					grunt.log.ok('Found ' + done_count + ' flow hooks. Configuration exported');
+                    grunt.verbose.writeln("================== export flow_hook DONE()" );
 					done();
 				}
 			}.bind({
 				cur_flow_hook_type: flow_hook_type[i]
 			})).auth(userid, passwd, true);
 		}
-		var done = this.async();
+		/*
+		setTimeout(function() {
+		    grunt.verbose.writeln("================== Flow Hooks Timeout done" );
+		    done(true);
+		}, 3000);
+		grunt.verbose.writeln("========================= export Flow Hooks DONE ===========================" );
+		*/
 
 	});
 
@@ -59,17 +70,17 @@ module.exports = function(grunt) {
 			// Read flow hook config file
 			var flow_hook_file = grunt.config.get("exportFlowHooks.dest.data");
 			flow_hook_config = grunt.file.readJSON(flow_hook_file);
-			grunt.verbose.write("Read flow hook config file contents: " + JSON.stringify(flow_hook_config) + "\n");
+			grunt.verbose.writeln("Read flow hook config file contents: " + JSON.stringify(flow_hook_config) + "\n");
 			for (var i = 0; i < flow_hook_type.length; i++) {
 				var cur_flow_hook = flow_hook_type[i];
 				var cur_shared_flow = flow_hook_config[cur_flow_hook];
 				var cur_url = base_url + "/" + cur_flow_hook;
 				if (cur_shared_flow != "") {
 					// Attach shared flow to flow hook
-					grunt.verbose.write("Attaching " + cur_shared_flow + " shared flow to " + cur_flow_hook + "\n");
+					grunt.verbose.writeln("Attaching " + cur_shared_flow + " shared flow to " + cur_flow_hook + "\n");
 					var request_data = {};
 					request_data['sharedFlow'] = cur_shared_flow;
-					grunt.verbose.write("Request data = " + JSON.stringify(request_data) + "\n");
+					grunt.verbose.writeln("Request data = " + JSON.stringify(request_data) + "\n");
 					var req = request.post(cur_url, {
 						json: true,
 						body: request_data
@@ -89,8 +100,8 @@ module.exports = function(grunt) {
 					})).auth(userid, passwd, true);
 				} else {
 					// Delete shared flow if any configured
-					grunt.verbose.write("Removing any attached shared flow to " + cur_flow_hook + "\n");
-					// grunt.verbose.write("Url = " + cur_url + "\n");
+					grunt.verbose.writeln("Removing any attached shared flow to " + cur_flow_hook + "\n");
+					// grunt.verbose.writeln("Url = " + cur_url + "\n");
 					var req = request.del(cur_url, function(err, resp, body) {
 						if (err) {
 							grunt.verbose.log(err);
@@ -122,7 +133,7 @@ module.exports = function(grunt) {
 			var cur_flow_hook = flow_hook_type[i];
 			var cur_url = base_url + "/" + cur_flow_hook;
 			// Delete shared flow 
-			grunt.verbose.write("Removing any attached shared flow to " + cur_flow_hook + "\n");
+			grunt.verbose.writeln("Removing any attached shared flow to " + cur_flow_hook + "\n");
 			var req = request.del(cur_url, function(err, resp, body) {
 				if (err) {
 					grunt.verbose.log(err);

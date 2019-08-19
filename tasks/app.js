@@ -16,8 +16,10 @@ module.exports = function(grunt) {
 		var total_apps =0;
 		var dev_url;
 		var done = this.async();
-		grunt.verbose.write("getting developers..." + url);
+		grunt.verbose.writeln("========================= export Apps ===========================" );
+		grunt.verbose.writeln("getting developers..." + url);
 		url = url + "/v1/organizations/" + org + "/developers";
+
 
 		var dumpApps = function(email) {
 			dev_url = url + "/" + email;
@@ -36,19 +38,19 @@ module.exports = function(grunt) {
 						if (!app_error && app_response.statusCode == 200) {
 
 							var apps_detail = JSON.parse(app_body);
-							grunt.verbose.write(app_body);
+							grunt.verbose.writeln(app_body);
 							var apps = apps_detail.app;
-							//grunt.verbose.write(apps);
+							//grunt.verbose.writeln(apps);
 							if (apps) {
 								for (var j = 0; j < apps.length; j++) {
 									var app = apps[j];
-									grunt.verbose.writeln(app);
+									grunt.verbose.writeln(JSON.stringify(app));
 									//var file_name  = dev_folder + "/" + app.appId;
 									var file_name = dev_folder + "/" + app.name;
 									grunt.verbose.writeln("writing file: " + file_name);
 									grunt.file.write(file_name, JSON.stringify(app));
-								}
-								;
+									grunt.verbose.writeln('App ' + app.name + ' written!');
+								};
 							}
 							total_apps += apps.length;
 
@@ -59,19 +61,19 @@ module.exports = function(grunt) {
 							}
 						}
 						else {
-							if (error)
-								grunt.log.error(error);
-							else
-								grunt.log.error(body);
+							grunt.verbose.writeln('Error Exporting ' + app.name);
+							grunt.log.error(body);
 						}
 						done_count++;
 						if (done_count == dev_count) {
 							grunt.log.ok('Exported ' + total_apps + ' apps for ' + done_count + ' developers');
+                            grunt.verbose.writeln("================== export Apps DONE()" );
+							done();
 						}
 					}).auth(userid, passwd, true);
 				}
 				else {
-					if (dev_error)
+					if (dev_error )
 						grunt.log.error(dev_error);
 					else
 						grunt.log.error(dev_body);
@@ -86,15 +88,15 @@ module.exports = function(grunt) {
 			if (start) {
 				url += "?startKey=" + encodeURIComponent(start);
 			}
-			grunt.verbose.write("getting developers..." + url);
+			grunt.verbose.writeln("getting developers..." + url);
 
 			request(url, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
 					var devs = JSON.parse(body);
 					var last = null;
 
-					// detect that the only developer returned is the one we asked to start with; that's the end game.
-					if ((devs.length == 0) || (devs.length == 1 && devs[0] == start)) {
+					// detect none or that the only developer returned is the one we asked to start with; that's the end game.
+					if ((devs.length == 0) || (devs.length == 1 && devs[0] == start) ) {
 						grunt.log.ok('Retrieved total of ' + dev_count + ' developers');
 						done();
 					} else {
@@ -127,126 +129,158 @@ module.exports = function(grunt) {
 		}
 
 		iterateOverDevs(null, url, dumpApps);
+		/*
+		setTimeout(function() {
+		    grunt.verbose.writeln("================== Apps Timeout done" );
+		    done(true);
+		}, 3000);
+		grunt.verbose.writeln("========================= export Apps DONE ===========================" );
+		*/
 	});
 
-
-
 	grunt.registerMultiTask('importApps', 'Import all apps to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
-		var url = apigee.to.url;
-		var org = apigee.to.org;
-		var userid = apigee.to.userid;
-		var passwd = apigee.to.passwd;
-		var done_count =0;
-		var files;
-		url = url + "/v1/organizations/" + org + "/developers/";
-		var done = this.async();
-		var opts = {flatten: false};
-		var f = grunt.option('src');
-		if (f)
-		{
-			grunt.verbose.writeln('src pattern = ' + f);
-			files = grunt.file.expand(opts,f);
-		}
-		else
-		{
-			files = this.filesSrc;
-		}
+	    var url = apigee.to.url;
+	    var org = apigee.to.org;
+	    var userid = apigee.to.userid;
+	    var passwd = apigee.to.passwd;
+	    var done_count = 0;
+	    var files;
+	    url = url + "/v1/organizations/" + org + "/developers/";
+	    var opts = {
+	        flatten: false
+	    };
+	    var f = grunt.option('src');
+	    if(f) {
+	        grunt.verbose.writeln('src pattern = ' + f);
+	        files = grunt.file.expand(opts, f);
+	    } else {
+	        files = this.filesSrc;
+	    }
 
-		async.eachSeries(files, function (filepath,callback) {
-			console.log(filepath);
-			var folders = filepath.split("/");
-			var dev = folders[folders.length - 2];
-			var content = grunt.file.read(filepath);
-			var app = JSON.parse(content);
-			grunt.verbose.writeln("Creating app : " + app.name + " under developer " + dev);
+	    var done = this.async();
 
-			delete app['appId'];
-			//delete app['status'];
-			delete app['developerId'];
-			delete app['lastModifiedAt'];
-			delete app['lastModifiedBy'];
-			delete app['createdAt'];
-			delete app['createdBy'];
-			//delete app['status'];
-			delete app['appFamily'];
-			delete app['accessType'];
-			delete app['credentials'];
+	    async.eachSeries(files, function(filepath, callback) {
+	        console.log(filepath);
+	        var folders = filepath.split("/");
+	        var dev = folders[folders.length - 2];
+	        var content = grunt.file.read(filepath);
+	        var app = JSON.parse(content);
+	        grunt.verbose.writeln("Creating app : " + app.name + " under developer " + dev);
 
-			grunt.verbose.writeln(JSON.stringify(app));
-			var app_url = url + dev + "/apps";
-			grunt.verbose.writeln("Creating App " + app_url);
+	        var status_done = false;
+	        var delete_done = false;
 
-			request.post({
-			  headers: {'Content-Type' : 'application/json'},
-			  url:     app_url,
-			  body:    JSON.stringify(app)
-			}, function(error, response, body){
-				try{
-				  done_count++;
-				  var cstatus = 999;
-				  if (response)	
-				  	  cstatus = response.statusCode;
-				  if (cstatus == 200 || cstatus == 201)
-				  {
-				  grunt.verbose.writeln('Resp [' + response.statusCode + '] for create app  ' + this.app_url + ' -> ' + body);
-				  var app_resp = JSON.parse(body);
+	        delete app['appId'];
+	        //delete app['status'];
+	        delete app['developerId'];
+	        delete app['lastModifiedAt'];
+	        delete app['lastModifiedBy'];
+	        delete app['createdAt'];
+	        delete app['createdBy'];
+	        //delete app['status'];
+	        delete app['appFamily'];
+	        delete app['accessType'];
+	        delete app['credentials'];
 
-				  if (app['status'] && (app_resp['status'] != app['status']))
-				  {
-					  var status_url = app_url + '/' + app.name + '?action=';
-					  if (app['status'] == 'approved')
-						  status_url += "approve";
-					  else
-						  status_url += "revoke";
+	        grunt.verbose.writeln(JSON.stringify(app));
+	        var app_url = url + dev + "/apps";
+	        grunt.verbose.writeln("Creating App " + app_url);
 
-					  // Set the app status
-					  request.post(status_url, function(error, response, body){
-						  var status = 999;
-						  if (response)
-							  status = response.statusCode;
-						  grunt.verbose.writeln('Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.status_url + ' -> ' + body);
-						  if (error || status!=204)
-							  grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.status_url + ' -> ' + body);
+	        request.post({
+	                headers: {
+	                    'Content-Type': 'application/json'
+	                },
+	                url: app_url,
+	                body: JSON.stringify(app)
+	            },
+	            function(error, response, body) {
+	                try {
+	                    var cstatus = 999;
+	                    if(response)
+	                        cstatus = response.statusCode;
+	                    if(cstatus == 200 || cstatus == 201) {
+	                        grunt.verbose.writeln('Resp [' + response.statusCode + '] for create app  ' + this.app_url + ' -> ' + body);
+	                        var app_resp = JSON.parse(body);
 
-					  }.bind( {dev:dev, status_url: status_url, app_name: app.name}) ).auth(userid, passwd, true);
-				  }
+	                       	// Set app status
+	                        if (app['status'] && (app_resp['status'] != app['status'])) {
+	                            var status_url = app_url + '/' + app.name + '?action=';
+	                            if(app['status'] == 'approved')
+	                                status_url += "approve";
+	                            else
+	                                status_url += "revoke";
 
-				  var client_key = app_resp.credentials[0].consumerKey;
-				  //grunt.verbose.writeln("deleting key -> " + client_key);
-				  var delete_url = app_url + '/' + app.name + '/keys/' + client_key;
-				  //grunt.verbose.writeln("KEY Delete URL -> " + delete_url);
+	                            request.post(status_url, function(error, response, body) {
+	                                var status = 999;
+	                                if(response)
+	                                    status = response.statusCode;
+	                                grunt.verbose.writeln('Resp [' + status + '] for app status ' + this.dev + ' - ' + this.app_name + ' - ' + this.status_url + ' -> ' + body);
+	                                if(error || status != 204)
+	                                    grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.status_url + ' -> ' + body);
 
-		          // Delete the key generated when App is created
-		      	  request.del(delete_url,function(error, response, body){
-				    var status = 999;
-				    if (response)	
-				  	  status = response.statusCode;
-				  	grunt.verbose.writeln('Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body);
-				  	if (error || status!=200 )
-					  	grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body); 
-					}.bind( {delete_url: delete_url}) ).auth(userid, passwd, true);
-		      	  	// END of Key DELETE
-		      	  }
-		      	  else
-		      	  {
-		      	  	grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create app  ' + this.app_url + ' -> ' + body);
-		      	  	callback();
-		      	  }
-				}
-				catch(err)
-				{
-					grunt.log.error("ERROR - from App URL : " + app_url );
-					grunt.log.error(body);
-				}
-				if (done_count == files.length)
-				{
-					grunt.log.ok('Processed ' + done_count + ' apps');
-					done();
-				}
-				callback();
-			}.bind( {app_url: app_url}) ).auth(userid, passwd, true);	
-		});
-		var done = this.async();
+	                                // START of fix part1 issue #26
+	                                status_done = true;
+	                                if(delete_done) {
+	                                    done_count++;
+	                                    if(done_count == files.length) {
+	                                        grunt.log.ok('Processed ' + done_count + ' apps');
+	                                        done();
+	                                    }
+	                                    callback();
+	                                }
+	                                // END of fix part1 issue #26
+	                            }.bind({dev: dev,status_url: status_url,app_name: app.name})).auth(userid, passwd, true);
+	                        }
+	                        // START of fix part 2 issue #26
+	                        else {
+	                            status_done = true;
+	                            if(delete_done) {
+	                                done_count++;
+	                                if(done_count == files.length) {
+	                                    grunt.log.ok('Processed ' + done_count + ' apps');
+	                                    done();
+	                                }
+	                                callback();
+	                            }
+	                        }
+	                        // END of fix part 2 issue #26
+	                        // END of set App status
+
+	                        // Delete the key generated when App is created
+	                        var client_key = app_resp.credentials[0].consumerKey;
+	                        var delete_url = app_url + '/' + app.name + '/keys/' + client_key;
+
+	                        request.del(delete_url, function(error, response, body) {
+	                            var status = 999;
+	                            if(response)
+	                                status = response.statusCode;
+	                            grunt.verbose.writeln('Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body);
+	                            if(error || status != 200)
+	                                grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.delete_url + ' -> ' + body);
+
+	                            // START of fix part 3 issue #26
+	                            delete_done = true;
+	                            if(status_done) {
+	                                done_count++;
+	                                if(done_count == files.length) {
+	                                    grunt.log.ok('Processed ' + done_count + ' apps');
+	                                    done();
+	                                }
+	                                callback();
+	                            }
+	                            // END of fix part 3 issue #26					
+	                        }.bind({delete_url: delete_url})).auth(userid, passwd, true);
+	                        // END of Key DELETE
+	                    } else {
+	                        grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create app  ' + this.app_url + ' -> ' + body);
+	                        callback();
+	                    }
+	                } catch (err) {
+	                    grunt.log.error("ERROR - from App URL : " + app_url);
+	                    grunt.log.error(body);
+	                }
+	            }.bind({app_url: app_url})).auth(userid, passwd, true);
+	    });
 	});
 
 

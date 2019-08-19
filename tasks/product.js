@@ -11,39 +11,56 @@ module.exports = function(grunt) {
 		var passwd = apigee.from.passwd;
 		var filepath = grunt.config.get("exportProducts.dest.data");
 		var done_count =0;
+		var done = this.async();
+		grunt.verbose.writeln("========================= export Products ===========================" );
 
-		grunt.verbose.write("getting products..." + url);
+		grunt.verbose.writeln("getting products..." + url);
 		url = url + "/v1/organizations/" + org + "/apiproducts";
 
 		request(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
-				//grunt.log.write(body);
+				grunt.log.write("PRODUCTS: " + body);
 			    products =  JSON.parse(body);
-			   
 			    
+			    if( products.length == 0 ) {
+			    	grunt.verbose.writeln("No Products");
+			    	done();
+			    }
 			    for (var i = 0; i < products.length; i++) {
 			    	var product_url = url + "/" + products[i];
 			    	grunt.file.mkdir(filepath);
 
 			    	//Call product details
-					request(product_url, function (error, response, body) {
-						if (!error && response.statusCode == 200) {
-							grunt.verbose.write(body);
-						    var product_detail =  JSON.parse(body);
-						    var dev_file = filepath + "/" + product_detail.name;
-						    grunt.file.write(dev_file, body);
-						}
-						else
-						{
-							grunt.log.error(error);
-						}
-						done_count++;
-						if (done_count == products.length)
-						{
-							grunt.log.ok('Processed ' + done_count + ' products');
-							done();
-						}
-					}).auth(userid, passwd, true);
+			    	grunt.verbose.writeln("PRODUCT URL: " + product_url.length + " " + product_url);
+			    	// An Edge bug allows products to be created with very long names which cannot be used in URLs.
+			    	if( product_url.length > 1024 ) {
+			    		grunt.log.write("SKIPPING Product, URL too long: ");
+			    		done_count++;
+			    	} else {
+						request(product_url, function (error, response, body) {
+							if (!error && response.statusCode == 200) {
+								grunt.verbose.writeln("PRODUCT " + body);
+							    var product_detail =  JSON.parse(body);
+							    var dev_file = filepath + "/" + product_detail.name;
+							    grunt.file.write(dev_file, body);
+
+							    grunt.verbose.writeln('Exported Product ' + product_detail.name);
+							}
+							else
+							{
+								grunt.verbose.writeln('Error Exporting Product ' + product_detail.name);
+								grunt.log.error(error);
+							}
+
+							done_count++;
+							if (done_count == products.length)
+							{
+								grunt.log.ok('Processed ' + done_count + ' products');
+	                            grunt.verbose.writeln("================== export products DONE()" );
+								done();
+							}
+						}).auth(userid, passwd, true);
+					}
 			    	// End product details
 			    };
 			    
@@ -53,7 +70,13 @@ module.exports = function(grunt) {
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
-		var done = this.async();
+		/*
+		setTimeout(function() {
+		    grunt.verbose.writeln("================== Products Timeout done" );
+		    done(true);
+		}, 10000);
+		grunt.verbose.writeln("========================= export Products DONE ===========================" );
+		*/
 	});
 
 	grunt.registerMultiTask('importProducts', 'Import all products to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
@@ -67,7 +90,7 @@ module.exports = function(grunt) {
 		var f = grunt.option('src');
 		if (f)
 		{
-			grunt.verbose.write('src pattern = ' + f);
+			grunt.verbose.writeln('src pattern = ' + f);
 			files = grunt.file.expand(opts,f);
 		}
 		url = url + "/v1/organizations/" + org + "/apiproducts";
@@ -75,7 +98,7 @@ module.exports = function(grunt) {
 
 		files.forEach(function(filepath) {
 			var content = grunt.file.read(filepath);
-			//grunt.verbose.write(content);	
+			//grunt.verbose.writeln(content);	
 			request.post({
 			  headers: {'content-type' : 'application/json'},
 			  url:     url,
@@ -120,7 +143,7 @@ module.exports = function(grunt) {
 			var content = grunt.file.read(filepath);
 			var product = JSON.parse(content);
 			var del_url = url + product.name;
-			grunt.verbose.write(del_url);	
+			grunt.verbose.writeln(del_url);	
 			request.del(del_url, function(error, response, body){
 			  var status = 999;
 			  if (response)	

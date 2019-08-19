@@ -11,34 +11,42 @@ module.exports = function(grunt) {
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
 		var filepath = grunt.config.get("exportDevs.dest.data");
-		var dev_count =0;
+		var dev_count = 0;
 		var done_count = 0;
+		var done = this.async();
+		grunt.verbose.writeln("========================= export Devs ===========================" );
 
-		grunt.verbose.write("getting developers..." + url);
+		grunt.verbose.writeln("getting developers... " + url);
 		url = url + "/v1/organizations/" + org + "/developers";
 
 		var dumpDeveloper = function(email) {
 			var dev_url = url + "/" + email;
-			grunt.verbose.write("getting developer " + dev_url);
+			grunt.verbose.writeln("getting developer " + dev_url);
 
 			//Call developer details
-			request(dev_url, function (error, response, body) {
-				if (!error && response.statusCode == 200) {
-					grunt.verbose.write(body);
-					var dev_detail = JSON.parse(body);
+			request(dev_url, function (dev_error, dev_response, dev_body) {
+				if (!dev_error && dev_response.statusCode == 200) {
+					grunt.verbose.writeln(dev_body);
+					var dev_detail = JSON.parse(dev_body);
 					var dev_file = filepath + "/" + dev_detail.email;
-					grunt.file.write(dev_file, body);
-					done_count++;
+					grunt.file.write(dev_file, dev_body);
+					grunt.verbose.writeln('Dev ' + dev_detail.email + ' written!');
 				}
 				else {
 					if (error)
-						grunt.log.error(error);
+						grunt.log.error(dev_error);
 					else
-						grunt.log.error(body);
+						grunt.log.error(dev_body);
 				}
-
+				done_count++;
+				if (done_count == dev_count) {
+					grunt.log.ok('Exported ' + done_count + ' developers');
+                    grunt.verbose.writeln("================== export Devs DONE()" );
+					done();
+				}
 			}.bind( {dev_url: dev_url}) ).auth(userid, passwd, true);
 		}
+
 
 		var iterateOverDevs = function(start, base_url, callback) {
 			var url = base_url;
@@ -46,23 +54,21 @@ module.exports = function(grunt) {
 			if (start) {
 				url += "?startKey=" + encodeURIComponent(start);
 			}
-			grunt.verbose.write("getting developers..." + url);
+			grunt.verbose.writeln("getting developers..." + url);
 
 			request(url, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
-					devs = JSON.parse(body);
+					var devs = JSON.parse(body);
 					var last = null;
 
-					grunt.verbose.writeln("Found " + devs.length + " developers...");
-
-					// detect that the only developer returned is the one we asked to start with; that's the end game.
-					if ( (devs.length == 0) || (devs.length == 1 && devs[0] == start) ){
+					// detect none or that the only developer returned is the one we asked to start with; that's the end game.
+					if ((devs.length == 0) || (devs.length == 1 && devs[0] == start) ) {
 						grunt.log.ok('Retrieved total of ' + dev_count + ' developers');
 						done();
-						//callback(all_devs);
-
 					} else {
 						dev_count += devs.length;
+						if (start)
+							dev_count--;
 
 						for (var i = 0; i < devs.length; i++) {
 							// If there was a 'start', don't do it again, because it was processed in the previous callback.
@@ -88,10 +94,15 @@ module.exports = function(grunt) {
 			}).auth(userid, passwd, true);
 		}
 
-		var done = this.async();
-
 		// get All developers
 		iterateOverDevs(null, url, dumpDeveloper);
+		/*
+		setTimeout(function() {
+		    grunt.verbose.writeln("================== Devs Timeout done" );
+		    done(true);
+		}, 3000);
+		grunt.verbose.writeln("========================= export Devs DONE ===========================" );
+		*/
 	});
 
 
@@ -118,7 +129,7 @@ module.exports = function(grunt) {
 		files.forEach(function(filepath) {
 			console.log(filepath);
 			var content = grunt.file.read(filepath);
-			grunt.verbose.write(url);	
+			grunt.verbose.writeln(url);	
 			request.post({
 			  headers: {'Content-Type' : 'application/json'},
 			  url:     url,
@@ -162,7 +173,7 @@ module.exports = function(grunt) {
 			var content = grunt.file.read(filepath);
 			var dev = JSON.parse(content);
 			var del_url = url + dev.email;
-			grunt.verbose.write(del_url);	
+			grunt.verbose.writeln(del_url);	
 			request.del(del_url, function(error, response, body){
 			  var status = 999;
 			  if (response)	
