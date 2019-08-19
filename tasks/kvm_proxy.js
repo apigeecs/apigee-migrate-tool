@@ -11,23 +11,28 @@ module.exports = function(grunt) {
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
 		var filepath = grunt.config.get("exportProxyKVM.dest.data");
-		var done_count =0;
+		var done_count = 0;
 		var done = this.async();
 		var proxies_url = url + "/v1/organizations/" + org + "/apis";
+		grunt.verbose.writeln("========================= export Proxy KVMs ===========================" );
+
 		grunt.verbose.writeln(proxies_url);
 		grunt.file.mkdir(filepath);
 		request(proxies_url, function (proxy_error, proxy_response, proxy_body) {
 			if (!proxy_error && proxy_response.statusCode == 200) {
-				grunt.verbose.writeln(proxy_body);
+				grunt.verbose.writeln("PROXY body: " + proxy_body);
 			    var proxies =  JSON.parse(proxy_body);
 			    for (var j = 0; j < proxies.length; j++) {
 			    	var proxy = proxies[j];
-			    	grunt.verbose.writeln(proxy);
+			    	// grunt.verbose.writeln("PROXY name: " + proxy);
 			    	var proxy_url = url + "/v1/organizations/" + org + "/apis/" + proxy + "/keyvaluemaps";
-			    	grunt.verbose.writeln("Proxy KVM URL: " + proxy_url);
+			    	grunt.verbose.writeln("Proxy KVMs URL: " + proxy_url);
+			    	// BUG
+			    	// This won't work as is, need to wait for all proxy KVMs to be written
+			    	//
 				    request(proxy_url, function (error, response, body) {
 						if (!error && response.statusCode == 200) {
-							grunt.verbose.writeln(this.proxy + " : " + body);
+							grunt.verbose.writeln("PROXY KVMs: " + this.proxy + " : " + body);
 						    kvms =  JSON.parse(body);   						    
 						    for (var i = 0; i < kvms.length; i++) {
 						    	var proxy_kvm_url = this.proxy_url + "/" + kvms[i];	
@@ -36,10 +41,11 @@ module.exports = function(grunt) {
 						    	//Call kvm details
 								request(proxy_kvm_url, function (error, response, body) {
 									if (!error && response.statusCode == 200) {
-										grunt.verbose.write(body);
+										grunt.verbose.writeln(body);
 									    var kvm_detail =  JSON.parse(body);
 									    var kvm_file = filepath + "/" + this.proxy + "/" + kvm_detail.name;
 									    grunt.file.write(kvm_file, body);
+									    grunt.verbose.writeln('Proxy KVM ' + kvm_detail.name + ' written!');
 									}
 									else
 									{
@@ -57,6 +63,7 @@ module.exports = function(grunt) {
 						if (done_count == proxies.length)
 						{
 							grunt.log.ok('Exported ' + done_count + ' proxy KVMs.');
+                            grunt.verbose.writeln("================== export Proxy KVMs DONE()" );
 							done();
 						}
 					}.bind( {proxy_url: proxy_url, proxy: proxy})).auth(userid, passwd, true);
@@ -67,6 +74,13 @@ module.exports = function(grunt) {
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
+		
+		setTimeout(function() {
+		    grunt.verbose.writeln("================== Proxy KVMs Timeout done" );
+		    done(true);
+		}, 3000);
+		grunt.verbose.writeln("========================= export Proxy KVMs DONE ===========================" );
+		
 	});
 
 

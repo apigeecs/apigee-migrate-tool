@@ -14,65 +14,65 @@ module.exports = function(grunt) {
 		var done_count =0;
 		var done = this.async();
 		var envs_url = url + "/v1/organizations/" + org + "/environments";
-		var num_kvms = 0;
-		var num_envs = 0;
-		var envs_done = 0;
-		grunt.verbose.writeln(envs_url);
+		var done = this.async();
+		grunt.verbose.writeln("========================= export Env KVMs ===========================" );
+	  grunt.verbose.writeln(envs_url);
 		grunt.file.mkdir(filepath);
         
 		request(envs_url, function (env_error, env_response, env_body) {
 			if (!env_error && env_response.statusCode == 200) {
-				grunt.verbose.writeln(env_body);
-					var envs =  JSON.parse(env_body);
-					num_envs = envs.length;
-                
-			    for (var j = 0; j < envs.length; j++) {
-			    	var env = envs[j];
-			    	var env_url = url + "/v1/organizations/" + org + "/environments/" + env + "/keyvaluemaps";
-                    
-			    	grunt.verbose.writeln("Env KVM URL: " + env_url);
-                    
-				    request(env_url, function (error, response, body) {
-						if (!error && response.statusCode == 200) {
-                            grunt.verbose.write(body);
-								kvms =  JSON.parse(body);
-								num_kvms += kvms.length;   	
-								for (var i = 0; i < kvms.length; i++) {
-						    	var env_kvm_url = this.env_url + "/" + kvms[i];	
-						    	grunt.verbose.writeln("KVM URL : " + env_kvm_url);
-						    	var env = this.env;
-                                
-						    	//Call kvm details
-								request(env_kvm_url, function (error, response, body) {
-									if (!error && response.statusCode == 200) {
-										grunt.verbose.write(body);
-									    var kvm_detail =  JSON.parse(body);
-									    var kvm_file = filepath + "/" + this.env + "/" + kvm_detail.name;
-											grunt.file.write(kvm_file, body);
-											done_count++;
-											// grunt.verbose.writeln("done_count = " + done_count);
-											if ((done_count == num_kvms) && (envs_done == num_envs))
-											{
-												grunt.log.ok('Exported  ' + done_count + ' KVMs across ' + envs.length + ' environments');
-												done();
-											}
-									}
-									else
-									{
-										grunt.log.error(error);
-									}
-                                }.bind( {env: env})).auth(userid, passwd, true);
-						    	// End kvm details
-						    };						    
-						} 
-						else
-						{
-							grunt.log.error(error);
-						}
-					
-						envs_done++;
-						
-					}.bind( {env_url: env_url, env: env})).auth(userid, passwd, true);
+          grunt.verbose.writeln(env_body);
+          var envs =  JSON.parse(env_body);
+          
+			    if( envs.length == 0 ) {
+                    grunt.verbose.writeln ("exportEnvKVM: No KVMs");
+                    grunt.verbose.writeln("================== export kvm DONE()" );
+                    done();
+                } else {
+                	for (var j = 0; j < envs.length; j++) {
+				    	var env = envs[j];
+				    	var env_url = url + "/v1/organizations/" + org + "/environments/" + env + "/keyvaluemaps";
+	                    
+				    	grunt.verbose.writeln("Env KVM URL: " + env_url);
+	                    
+					    request(env_url, function (error, response, body) {
+							if (!error && response.statusCode == 200) {
+	                            grunt.verbose.writeln(body);
+							    kvms =  JSON.parse(body);   						    
+							    for (var i = 0; i < kvms.length; i++) {
+							    	var env_kvm_url = this.env_url + "/" + kvms[i];	
+							    	grunt.verbose.writeln("KVM URL : " + env_kvm_url);
+							    	var env = this.env;
+	                                
+							    	//Call kvm details
+									request(env_kvm_url, function (error, response, body) {
+										if (!error && response.statusCode == 200) {
+											grunt.verbose.writeln(body);
+										    var kvm_detail =  JSON.parse(body);
+										    var kvm_file = filepath + "/" + this.env + "/" + kvm_detail.name;
+										    grunt.file.write(kvm_file, body);
+										}
+										else
+										{
+											grunt.log.error(error);
+										}
+										done_count++;
+										if (done_count == kvms.length)
+										{
+											grunt.log.ok('Exported ' + done_count + ' kvms');
+                                            grunt.verbose.writeln("================== export ENV KVM DONE()" );
+											done();
+										}
+	                                }.bind( {env: env})).auth(userid, passwd, true);
+							    	// End kvm details
+							    };						    
+							} 
+							else
+							{
+								grunt.log.error(error);
+							}
+						}.bind( {env_url: env_url, env: env})).auth(userid, passwd, true);
+					}
 				}
 			}
 			else
@@ -80,6 +80,13 @@ module.exports = function(grunt) {
 				grunt.log.error(error);
 			}
 		}).auth(userid, passwd, true);
+		/*
+		setTimeout(function() {
+		    grunt.verbose.writeln("================== ENV KVMs Timeout done" );
+		    done(true);
+		}, 3000);
+		grunt.verbose.writeln("========================= export Env KVMs DONE ===========================" );
+		*/
 	});
 
 	grunt.registerMultiTask('importEnvKVM', 'Import all env-kvm to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
