@@ -24,6 +24,7 @@ With the tool, you can import and export data about:
 - app keys
 - KVMs (org and env)
 - Reports
+- Spec store (Not available on-premises. Spec store APIs are in experimental status, so may change in the future) 
 
 You can also import the following kinds of data from a CSV file to an Apigee org:
   - developers
