@@ -16,14 +16,14 @@ module.exports = function(grunt) {
 		var envs_url = url + "/v1/organizations/" + org + "/environments";
 		var done = this.async();
 		grunt.verbose.writeln("========================= export Env KVMs ===========================" );
-		grunt.verbose.writeln(envs_url);
+	  grunt.verbose.writeln(envs_url);
 		grunt.file.mkdir(filepath);
         
 		request(envs_url, function (env_error, env_response, env_body) {
 			if (!env_error && env_response.statusCode == 200) {
-				grunt.verbose.writeln(env_body);
-			    var envs =  JSON.parse(env_body);
-                
+          grunt.verbose.writeln(env_body);
+          var envs =  JSON.parse(env_body);
+          
 			    if( envs.length == 0 ) {
                     grunt.verbose.writeln ("exportEnvKVM: No KVMs");
                     grunt.verbose.writeln("================== export kvm DONE()" );
