@@ -26,7 +26,7 @@ module.exports = function(grunt) {
 			//Call developer details
 			request(dev_url, function (dev_error, dev_response, dev_body) {
 				if (!dev_error && dev_response.statusCode == 200) {
-					//grunt.verbose.writeln(dev_body);
+					// grunt.verbose.write("Dev body = " + dev_body);
 					var dev_detail = JSON.parse(dev_body);
 					var last = dev_detail.email;
 					var dev_folder = filepath + "/" + dev_detail.email;
