@@ -53,10 +53,12 @@ module.exports = function(grunt) {
 					devs = JSON.parse(body);
 					var last = null;
 
-					// detect that the only developer returned is the one we asked to start with; that's the end game.
-					if (devs.length == 1 && devs[0] == start) {
-						grunt.log.ok('Retrieved total of ' + dev_count + ' developers');
+					grunt.verbose.writeln("Found " + devs.length + " developers...");
 
+					// detect that the only developer returned is the one we asked to start with; that's the end game.
+					if ( (devs.length == 0) || (devs.length == 1 && devs[0] == start) ){
+						grunt.log.ok('Retrieved total of ' + dev_count + ' developers');
+						done();
 						//callback(all_devs);
 
 					} else {
