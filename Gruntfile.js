@@ -38,6 +38,9 @@ module.exports = function(grunt) {
     exportFlowHooks: {
        dest: './data/flowhooks/flow_hook_config'       
     },
+    exportAllSpecs: {
+      dest: './data/specs'
+    },
     exportReports: {
        dest: './data/reports'
     },
@@ -74,6 +77,9 @@ module.exports = function(grunt) {
     importReports: {
         src: './data/reports/*'
     },
+    importAllSpecs: {
+        src: './data/specs/'
+    },
     deleteKeys: {
         src: 'data/apps/*/*'
     },
@@ -103,6 +109,8 @@ module.exports = function(grunt) {
     },
     deleteReports: {
         src: './data/reports/*'
+    },
+    deleteAllSpecs: {
     },
     readCSVDevs: {
         in_devs: './input/devs.csv',
