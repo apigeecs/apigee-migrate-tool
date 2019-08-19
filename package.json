@@ -10,7 +10,7 @@
     "load-grunt-config": "^0.19.2",
     "load-grunt-tasks": "^4.0.0",
     "readline": "0.0.7",
-    "request": "^2.37.0",
+    "request": "^2.88.0",
     "time-grunt": "^1.0.0"
   }
 }
