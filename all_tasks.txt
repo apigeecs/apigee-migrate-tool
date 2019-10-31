@@ -9,6 +9,7 @@ deleteProxies
 deleteProxyKVM
 deleteReports
 deleteSharedFlows
+deleteTargetServers
 
 deployProxies to org
 deploySharedFlows to org
@@ -17,6 +18,7 @@ exportApps
 exportDevs
 exportEnvKVM
 exportFlowHooks
+exportTargetServers
 exportOrgKVM
 exportProducts
 exportProxies
@@ -24,6 +26,7 @@ exportProxyKVM
 exportReports
 exportSharedFlows
 
+importTargetServers
 importApps
 importDevs
 importEnvKVM
