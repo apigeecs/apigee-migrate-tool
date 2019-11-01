@@ -10,3 +10,4 @@ deleteProxyKVM
 deleteFlowHooks
 deleteSharedFlows
 deleteTargetServers
+deleteCaches

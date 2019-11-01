@@ -1,5 +1,6 @@
 #!/bin/bash
 grunt importTargetServers -v
+grunt importCaches -v
 grunt importProxies -v
 grunt importSharedFlows -v
 grunt importDevs -v
