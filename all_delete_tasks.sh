@@ -9,4 +9,4 @@ deleteOrgKVM
 deleteProxyKVM
 deleteFlowHooks
 deleteSharedFlows
-
+deleteTargetServers
