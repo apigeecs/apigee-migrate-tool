@@ -19,7 +19,9 @@ module.exports = function (grunt) {
         var done = this.async();
 
         var specstoreObj = new SpecStore(apigee.from);
-        specstoreObj.downloadFolderContents("/homeFolder", filepath);
+        specstoreObj.getHomeFolderURI(function(json){
+            specstoreObj.downloadFolderContents(json.self, filepath);
+        });
     });
 
 
