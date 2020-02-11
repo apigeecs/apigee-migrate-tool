@@ -85,10 +85,8 @@ SpecStore.prototype.executeSpecStoreRequest = function (options, cb) {
             if(!options['method']) {
                 options['method'] = "GET";
             }
-            options['headers']['X-Org-Name'] = currentObj.orgConfig.org;
             options['headers']['Authorization'] = "Bearer " + currentObj.apigeeAccessToken;
             request(options, function(err,res,body){
-                //console.log(options['method'] + " " + options['uri']);
                 if(cb) {
                     cb(err, res, body);
                 }
@@ -107,7 +105,7 @@ SpecStore.prototype.executeSpecStoreRequest = function (options, cb) {
 SpecStore.prototype.getHomeFolderURI = function (cb) {
     var currentobj = this;
     currentobj.executeSpecStoreRequest({
-            uri: "/homeFolder",
+            uri: "/organizations/" + currentobj.orgConfig.org + "/specs/folder/home",
             headers: {
                 "Accept": "application/json, text/plain, */*"
             },
@@ -119,7 +117,7 @@ SpecStore.prototype.getHomeFolderURI = function (cb) {
                 console.log(res);
                 throw e;
             }
-            cb(body_json.self);
+            cb(body_json);
         });
 }
 
@@ -131,9 +129,9 @@ SpecStore.prototype.getHomeFolderURI = function (cb) {
  */
 SpecStore.prototype.getFolderContents = function (folder_uri, cb) {
     this.executeSpecStoreRequest({
-            uri: folder_uri + "/contents",
+            uri: folder_uri,
             headers: {
-                "Accept": "application/json, text/plain, */*"
+                "Accept": "application/json"
             },
             debug : true,
         },
@@ -143,7 +141,6 @@ SpecStore.prototype.getFolderContents = function (folder_uri, cb) {
                 cb(contents);
             } else {
                 if(body != undefined) {
-
                     var body_json = JSON.parse(body);
                     for (var i = 0; i < body_json.contents.length; i++) {
                         var e = body_json.contents[i];
@@ -153,15 +150,10 @@ SpecStore.prototype.getFolderContents = function (folder_uri, cb) {
                         if (!contents[e.kind]) {
                             contents[e.kind] = [];
                         }
-                        // We can have multiple files with same name in the DocStore hence needs to be an array.
-                        if(!contents[e.kind][e.name]) {
-                            contents[e.kind][e.name] = [e.self];
-                        } else {
-                            contents[e.kind][e.name][contents[e.kind][e.name].length] = e.self;
-                        }
+                        contents[e.kind][e.name] = e.self;
                     }
-                    cb(contents);
                 }
+                cb(contents);
             }
         });
 }
@@ -189,27 +181,20 @@ SpecStore.prototype.deleteSpecStoreObject = function(uri, cb){
  * @param cb
  */
 SpecStore.prototype.deleteFolderContents = function (folder_uri, cb){
+
     var currentObj = this;
 
     currentObj.getFolderContents(folder_uri, function(contents){
-        var flattened_contents = [];
-        for(var type in contents ) {
-            for(var name in contents[type]) {
-                var arr = contents[type][name];
-                for( var i = 0; i< arr.length; i++){
-                    flattened_contents[arr[i]] = type;
-                }
-            }
-        }
+
         //folder is empty so return cb
-        if(Object.keys(flattened_contents).length == 0) {
+        if(Object.keys(contents).length == 0) {
             if(cb){
                 cb(folder_uri);
             }
         } else {
-            async.forEach(Object.keys(flattened_contents), function (uri, callback) {
-                var type = flattened_contents[uri];
-                if (type == 'Doc') {
+            if(contents['Doc']) {
+                async.forEach(Object.keys(contents['Doc']), function (name, callback) {
+                    var uri = contents['Doc'][name];
                     currentObj.deleteSpecStoreObject(uri, function (err, res, body) {
                         if (err) {
                             callback(err);
@@ -217,33 +202,47 @@ SpecStore.prototype.deleteFolderContents = function (folder_uri, cb){
                             callback();
                         }
                     });
-                }
-                if (type == 'Folder') {
-                    currentObj.deleteFolderContents(uri, function (_spec_id) {
-                        if(_spec_id !== 'error') {
-                            currentObj.deleteSpecStoreObject(_spec_id, function (err, res, body) {
+                }, function (err) {
+                        if (err) {
+                            if (cb)
+                                cb('error');
+                        } else {
+                            if(!contents['Folder']) {
+                                if (cb)
+                                    cb(folder_uri);
+                            }
+                        }
+                    });
+            }
+            if (contents['Folder']) {
+                async.forEach(Object.keys(contents['Folder']), function (name, callback) {
+                    var uri = contents['Folder'][name];
+                    currentObj.deleteFolderContents(uri, function (_folder_id) {
+                        if (_folder_id !== 'error') {
+                            currentObj.deleteSpecStoreObject(_folder_id, function (err, res, body) {
                                 if (err) {
                                     callback(err)
                                 } else {
                                     callback();
                                 }
                             });
-                        }else {
+                        } else {
                             callback('error');
                         }
                     });
-                }
-            }, function (err, results) {
-                if (err) {
-                    if (cb)
-                        cb('error');
-                } else {
-                    if (cb)
-                        cb(folder_uri);
-                }
-            });
+                }, function (err) {
+                        if (err) {
+                            if (cb)
+                                cb('error');
+                        } else {
+                            if (cb)
+                                cb(folder_uri);
+                        }
+                    });
+            }
         }
     });
+
 }
 
 /**
@@ -253,8 +252,8 @@ SpecStore.prototype.deleteFolderContents = function (folder_uri, cb){
  */
 SpecStore.prototype.purgeEverything = function(cb){
     var currentObj = this;
-    currentObj.getHomeFolderURI(function(spec_id){
-        currentObj.deleteFolderContents(spec_id, function () {
+    currentObj.getHomeFolderURI(function(json){
+        currentObj.deleteFolderContents(json.self, function () {
             cb();
         });
     });
@@ -268,20 +267,20 @@ SpecStore.prototype.purgeEverything = function(cb){
  * @param cb
  */
 SpecStore.prototype.createFolder = function (parent_folder_uri, folder_name, cb) {
+    var currentObj = this;
     this.executeSpecStoreRequest({
         method: "POST",
-        uri: "/folders",
+        uri: '/organizations/' + currentObj.orgConfig.org + '/specs/folder',
         json: {
             name: folder_name,
-            kind: "Folder",
             folder: parent_folder_uri
         },
         headers: {
-            "Accept": "application/json, text/plain, */*"
+            "Accept": "application/json"
         }
     }, function (err, res, body) {
         var body_json = body;
-        cb(body_json.self);
+        cb(body_json);
     });
 }
 
@@ -298,7 +297,7 @@ SpecStore.prototype.uploadSpecFile = function (parent_folder_id, specName, srcFi
 
     //Create a new spec and upload the file
     currentObj.executeSpecStoreRequest({
-        uri: 'specs/new',
+        uri: '/organizations/' + currentObj.orgConfig.org + '/specs/doc',
         method: 'POST',
         headers: {
             "Accept": "application/json, text/plain, */*"
@@ -314,10 +313,9 @@ SpecStore.prototype.uploadSpecFile = function (parent_folder_id, specName, srcFi
             uri: body_json.content,
             method: "PUT",
             headers: {
-                "Accept": "application/json, text/plain, */*",
-                'Content-Type': 'application/x-yaml'
+                "content-type": "text/plain",
             },
-            body: fs.createReadStream(srcFile)
+            body: fs.readFileSync(srcFile)
         }, function (err2, res2, body2) {
             if (err2) {
                 if(cb) {
@@ -334,10 +332,10 @@ SpecStore.prototype.uploadSpecFile = function (parent_folder_id, specName, srcFi
 /**
  * Upload local folder to spec store.
  *
- * @param folder_uri - The uri of the folder to upload contents to
+ * @param folder_id - The uri of the folder to upload contents to
  * @param path - Corresponding folder on the filesystem
  */
-SpecStore.prototype.uploadDirectoryContents = function(folder_uri, path){
+SpecStore.prototype.uploadDirectoryContents = function(folder_id, path){
     var currentObj = this;
     console.log("Uploading ->  " + path);
     fs.lstat(path, function(err, stats){
@@ -346,22 +344,13 @@ SpecStore.prototype.uploadDirectoryContents = function(folder_uri, path){
                 files.forEach(function(entry){
                     fs.lstat(path  + "/" + entry, function(err2, stats2){
                         if(stats2.isDirectory()) {
-                            currentObj.createFolder(folder_uri, entry, function(new_spec_url){
-                                currentObj.uploadDirectoryContents(new_spec_url, path  + "/" + entry);
+                            currentObj.createFolder(folder_id, entry, function(json){
+                                currentObj.uploadDirectoryContents(json.id, path  + "/" + entry);
                             });
                         } else {
-                            if (entry.slice(-5) == '.json') { //Only upload JSON files
-                                var spec_name = entry;
-                                var start_index = spec_name.indexOf("---");
-                                if (start_index == -1) {
-                                    start_index = 0;
-                                } else {
-                                    //If file was exported it will follow the format 12334243---Pet Store API.json
-                                    start_index += "---".length;
-                                }
-                                spec_name = spec_name.slice(start_index, -5); // remove the .json extension
-
-                                currentObj.uploadSpecFile(folder_uri, spec_name, path + "/" + entry);
+                            if (entry.slice(-5) == '.yaml' || entry.slice(-5) == '.json') { //Only upload yaml or json files
+                                var spec_name = entry.slice(0, -5); // remove the .yaml extension
+                                currentObj.uploadSpecFile(folder_id, spec_name, path + "/" + entry);
                             }
                         }
                     });
@@ -378,8 +367,8 @@ SpecStore.prototype.uploadDirectoryContents = function(folder_uri, path){
  */
 SpecStore.prototype.uploadToSpecStore = function(path){
     var currentObj = this;
-    currentObj.getHomeFolderURI(function(home_folder_uri){
-        currentObj.uploadDirectoryContents(home_folder_uri, path);
+    currentObj.getHomeFolderURI(function(json){
+        currentObj.uploadDirectoryContents(json.id, path);
     });
 }
 
@@ -405,12 +394,12 @@ SpecStore.prototype.downloadFolderContents = function(folder_uri, path){
              */
             Object.keys(contents['Doc']).forEach(function(key){
                 currentObj.executeSpecStoreRequest({
-                    uri : contents['Doc'][key][0] + "/content",
+                    uri : contents['Doc'][key] + "/content",
                     headers: {
-                        "Accept": "application/json, text/plain, */*",
+                        "Accept": "text/plain",
                     }
                 }, function(err, res, body) {
-                    fs.writeFile(path + "/" + contents['Doc'][key][0] + "---" + key + ".json", body, function(err2){
+                    fs.writeFile(path + "/" + key + ".yaml", body, function(err2){
                         if (err2) throw err2;
                     });
                 });
@@ -418,9 +407,7 @@ SpecStore.prototype.downloadFolderContents = function(folder_uri, path){
         }
         if(contents['Folder']) {
             Object.keys(contents['Folder']).forEach(function (key) {
-                if (key.length > 0) {
-                    currentObj.downloadFolderContents(contents['Folder'][key][0], path + "/" + key);
-                }
+                currentObj.downloadFolderContents(contents['Folder'][key], path + "/" + key);
             });
         }
     })

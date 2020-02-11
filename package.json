@@ -1,5 +1,10 @@
 {
   "name": "apigee-migrate-tool",
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apigeecs/apigee-migrate-tool.git"
+  },
   "version": "0.1.0",
   "devDependencies": {
     "async": "^2.6.1",
