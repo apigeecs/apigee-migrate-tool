@@ -84,7 +84,7 @@ module.exports = function(grunt) {
         src: './data/reports/*'
     },
     importAllSpecs: {
-        src: './data/specs/'
+        src: './data/specs'
     },
     deleteKeys: {
         src: 'data/apps/*/*'
