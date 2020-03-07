@@ -12,7 +12,7 @@
     "grunt": "^1.0.3",
     "grunt-available-tasks": "^0.6.3",
     "grunt-mkdir": "^0.1.2",
-    "load-grunt-config": "^0.19.2",
+    "load-grunt-config": "^3.0.1",
     "load-grunt-tasks": "^4.0.0",
     "readline": "0.0.7",
     "request": "^2.88.0",
