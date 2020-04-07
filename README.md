@@ -26,6 +26,7 @@ With the tool, you can import and export data about:
 - Reports
 - Spec store (Not available on-premises. Spec store APIs are in experimental status, so may change in the future)
 - Target Servers
+- Cache Resources
 
 You can also import the following kinds of data from a CSV file to an Apigee org:
   - developers
@@ -36,7 +37,7 @@ You can also import the following kinds of data from a CSV file to an Apigee org
 ## Data not migrated
 
 **Please note** that the following entities won't be migrated as part of this tool. In most cases, you'll need to migrate these manually using the Apigee Edge console. For more on migrating these, see the Apigee [documentation on org data migration](https://docs.apigee.com/api-services/content/migrating-data-apigee-trial-org).
- - Cache resources and cached values.
+ - Cached values.
  - Environment resources such as virtualhosts, and keystores.
  - KVM entries for "encrypted" key-value maps. Encrypted values can't be retrieved using the management API. Make a note of the values you're using in your old org, then add these values manually to the new org.
  - Organization or environment level resources such as .jar files, .js files, and so on.
@@ -148,6 +149,7 @@ grunt exportApps
 grunt exportProxies
 grunt exportSharedFlows
 grunt exportTargetServers
+grunt exportCaches
 grunt exportProxyKVM
 grunt exportEnvKVM
 grunt exportOrgKVM
@@ -156,6 +158,7 @@ grunt exportOrgKVM
 #### Sequence for importing data
 ```
 grunt importTargetServers
+grunt importCaches
 grunt importProxies
 grunt importSharedFlows
 grunt importDevs

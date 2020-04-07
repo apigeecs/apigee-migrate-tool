@@ -9,4 +9,5 @@ grunt exportEnvKVM -v
 grunt exportOrgKVM -v
 grunt exportFlowHooks -v
 exportTargetServers -v
+exportCaches -v
 grunt exportReports -v
