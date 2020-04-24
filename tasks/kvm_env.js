@@ -67,9 +67,10 @@ module.exports = function(grunt) {
 		*/
 	});
 
-	grunt.registerMultiTask('importEnvKVM', 'Import all env-kvm to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
+	grunt.registerMultiTask('importEnvKVM', 'Import all env-kvm to org ' + apigee.to.org + " environment " + apigee.to.env + " [" + apigee.to.version + "]", function() {
 		var url = apigee.to.url;
 		var org = apigee.to.org;
+		var env = apigee.to.env;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
 		var done_count =0;
@@ -89,58 +90,65 @@ module.exports = function(grunt) {
 		}
 
 		async.eachSeries(files, function (filepath,callback) {
-			console.log(filepath);
 			var folders = filepath.split("/");
-			var env = folders[folders.length - 2];
-			var content = grunt.file.read(filepath);
-			var kvm = JSON.parse(content);
-			grunt.verbose.writeln("Creating KVM : " + kvm.name + " under env " + env);
-			grunt.verbose.writeln(JSON.stringify(kvm));
-			var kvm_url = url + "environments/" + env + "/keyvaluemaps";
-			grunt.verbose.writeln("Creating kvm " + kvm_url);
+			var input_env = folders[folders.length - 2];
+			if( input_env !== env ) {
+				grunt.verbose.writeln("Skipping: " + filepath);
+				done_count++;
+				callback();
+			}
+			else {
+				var content = grunt.file.read(filepath);
+				var kvm = JSON.parse(content);
+				grunt.verbose.writeln("Creating KVM : " + kvm.name + " under env " + env);
+				grunt.verbose.writeln(JSON.stringify(kvm));
+				var kvm_url = url + "environments/" + env + "/keyvaluemaps";
+				grunt.verbose.writeln("Creating kvm " + kvm_url);
 
-			request.post({
-			  headers: {'Content-Type' : 'application/json'},
-			  url:     kvm_url,
-			  body:    JSON.stringify(kvm)
-			}, function(error, response, body){
-				try{
-				  done_count++;
-				  var cstatus = 999;
-				  if (response)	
-				  	  cstatus = response.statusCode;
-				  if (cstatus == 200 || cstatus == 201)
-				  {
-				  grunt.verbose.writeln('Resp [' + response.statusCode + '] for create kvm  ' + this.kvm_url + ' -> ' + body);
-				  var kvm_resp = JSON.parse(body);
-				  if (done_count == files.length)
-					{
-						grunt.log.ok('Processed ' + done_count + ' kvms');
-						done();
+				request.post({
+				  headers: {'Content-Type' : 'application/json'},
+				  url:     kvm_url,
+				  body:    JSON.stringify(kvm)
+				}, function(error, response, body){
+					try{
+					  done_count++;
+					  var cstatus = 999;
+					  if (response)
+						cstatus = response.statusCode;
+					  if (cstatus == 200 || cstatus == 201)
+					  {
+					  grunt.verbose.writeln('Resp [' + response.statusCode + '] for create kvm  ' + this.kvm_url + ' -> ' + body);
+					  var kvm_resp = JSON.parse(body);
+					  if (done_count == files.length)
+						{
+							grunt.log.ok('Processed ' + done_count + ' kvms');
+							done();
+						}
+						callback();
+					  }
+					  else
+					  {
+						grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create kvm  ' + this.kvm_url + ' -> ' + body);
+						callback();
+					  }
 					}
-					callback();
-		      	  }
-		      	  else
-		      	  {
-		      	  	grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create kvm  ' + this.kvm_url + ' -> ' + body);
-		      	  	callback();
-		      	  }
-				}
-				catch(err)
-				{
-					grunt.log.error("ERROR - from kvm URL : " + kvm_url );
-					grunt.log.error(body);
-				}
+					catch(err)
+					{
+						grunt.log.error("ERROR - from kvm URL : " + kvm_url );
+						grunt.log.error(body);
+					}
 
-			}.bind( {kvm_url: kvm_url}) ).auth(userid, passwd, true);	
+				}.bind( {kvm_url: kvm_url}) ).auth(userid, passwd, true);
+			}
 		});
 		//var done = this.async();
 	});
 
 
-	grunt.registerMultiTask('deleteEnvKVM', 'Delete all env-kvm from org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
+	grunt.registerMultiTask('deleteEnvKVM', 'Delete all env-kvm from org ' + apigee.to.org + " environment " + apigee.to.env + " [" + apigee.to.version + "]", function() {
 		var url = apigee.to.url;
 		var org = apigee.to.org;
+		var env = apigee.to.env;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
 		var done_count =0;
@@ -162,25 +170,31 @@ module.exports = function(grunt) {
 		files.forEach(function(filepath) {
 			grunt.verbose.writeln("processing file " + filepath);
 			var folders = filepath.split("/");
-			var env = folders[folders.length - 2];
-			var content = grunt.file.read(filepath);
-			var kvm = JSON.parse(content);
-			var kvm_del_url = url + "environments/" + env + "/keyvaluemaps/" + kvm.name;
-			grunt.verbose.writeln(kvm_del_url);
-			request.del(kvm_del_url,function(error, response, body){
-			   var status = 999;
-			   if (response)	
-			    status = response.statusCode;
-			  grunt.verbose.writeln('Resp [' + status + '] for delete kvm ' + this.kvm_del_url + ' -> ' + body);
-			  done_count++;
-			  if (error || status!=200)
-			  	grunt.verbose.error('ERROR Resp [' + status + '] for delete kvm ' + this.kvm_del_url + ' -> ' + body); 
-			  if (done_count == files.length)
-			  {
-				grunt.log.ok('Processed ' + done_count + ' kvms');
-				done();
-			  }
-			}.bind( {kvm_del_url: kvm_del_url}) ).auth(userid, passwd, true);	
+			var input_env = folders[folders.length - 2];
+			if( input_env !== env ) {
+				grunt.verbose.writeln("Skipping: " + filepath);
+				done_count++;
+			}
+			else {
+				var content = grunt.file.read(filepath);
+				var kvm = JSON.parse(content);
+				var kvm_del_url = url + "environments/" + env + "/keyvaluemaps/" + kvm.name;
+				grunt.verbose.writeln(kvm_del_url);
+				request.del(kvm_del_url,function(error, response, body){
+				   var status = 999;
+				   if (response)
+				    status = response.statusCode;
+				  grunt.verbose.writeln('Resp [' + status + '] for delete kvm ' + this.kvm_del_url + ' -> ' + body);
+				  done_count++;
+				  if (error || status!=200)
+					grunt.verbose.error('ERROR Resp [' + status + '] for delete kvm ' + this.kvm_del_url + ' -> ' + body);
+				  if (done_count == files.length)
+				  {
+					grunt.log.ok('Processed ' + done_count + ' kvms');
+					done();
+				  }
+				}.bind( {kvm_del_url: kvm_del_url}) ).auth(userid, passwd, true);
+			}
 		});
 
 	});
