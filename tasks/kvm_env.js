@@ -14,7 +14,6 @@ module.exports = function(grunt) {
 		var filepath = grunt.config.get("exportEnvKVM.dest.data");
 		var done_count =0;
 		var done = this.async();
-		var done = this.async();
 		grunt.verbose.writeln("========================= export Env KVMs ===========================" );
 		grunt.file.mkdir(filepath);
         
