@@ -26,9 +26,10 @@ module.exports = function(grunt) {
 		{
 			files = this.filesSrc;
 		}
-	
+		var done = this.async();
 
-		async.eachSeries(files, function (filepath,callback) {
+		async.eachSeries(files, function (filepath,callback_files) {
+			console.log( "filepath: " + filepath );
 			var folders = filepath.split("/");
 			var dev = folders[folders.length - 2];
 			var app = grunt.file.readJSON(filepath);
@@ -45,10 +46,9 @@ module.exports = function(grunt) {
 				for (var j = 0; j < products.length; j++) {
 					prods.push(products[j].apiproduct);
 				};
-				 
+
 				products_payload['apiProducts'] = prods;
 				var create_key_url = url + dev + "/apps/" + app.name + "/keys/";
-
 				async.series([
 				    function(callback){
 				    	
@@ -100,27 +100,22 @@ module.exports = function(grunt) {
 							if (error || status!=204)
 							  	grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.product + ' - ' + this.cKey + ' - ' + this.approve_key_url + ' -> ' + body); 
 							done_cnt++;							 
-							}.bind( {dev:dev, approve_key_url: approve_key_url, cKey: cKey, app_name: app.name, product: prods[k]}) ).auth(userid, passwd, true);	 
 							if (done_cnt == prods.length)
 							  	callback(null, 'three');
+							}.bind( {dev:dev, approve_key_url: approve_key_url, cKey: cKey, app_name: app.name, product: prods[k]}) ).auth(userid, passwd, true);
 						}      
 				    }
-				],
-				// optional callback
-				function(err, results){
-				    grunt.verbose.writeln("Keys migrated for app " + app.name);
-				    
+				], function(err, results){
+					grunt.verbose.writeln("Keys migrated for app " + app.name + " results: " + results);
+					done_count++;
+					if (done_count == files.length) {
+						grunt.log.ok('Processed ' + done_count + ' keys');
+						done();
+					}
 				});
-                // callback();
-    			if (done_count == credentials.length)
-    			{
-    				grunt.log.ok('Processed ' + done_count + ' keys');
-    				done();
-    			}
-    			callback();			
-			};
+			}
+			callback_files();
 		});
-		var done = this.async();
 	});
 
 	grunt.registerMultiTask('deleteKeys', 'Delete all app keys from org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
