@@ -87,8 +87,10 @@ userid | Username for a user with permission to log in to your org
 passwd | Password for a user with permission to log in to your org
 org | The organization to export from or import to
 env | The environment to export from or import to
+token | A bearer token used when SSO is enabled or in place of basic auth. If
+this is set you must remove userid and passwd.
 
-    Here's an example of an edited config.js:
+    Here's an example of an edited config.js using basic auth:
 
 
     ```
@@ -111,6 +113,28 @@ env | The environment to export from or import to
         }
     } ;
     ```
+
+   And an example using bearer tokens.
+
+    ```
+    module.exports = {
+        from: {
+			version: '1',
+			url: 'https://api.enterprise.apigee.com',
+			token: 'mysupersecrettoken',
+			org: 'my-old-org',
+			env: 'my-old-env'
+        },
+        to: {
+			version: '1',
+			url: 'https://api.enterprise.apigee.com',
+                        token: 'mysupersecrettoken'
+			org: 'my-new-org',
+			env: 'my-new-env'
+        }
+    } ;
+    ```
+
 
 ## Using the tool
 
