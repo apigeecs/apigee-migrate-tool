@@ -10,7 +10,8 @@ module.exports = function(grunt) {
 		var org = apigee.from.org;
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
-		var filepath = grunt.config.get("exportProxyKVM.dest.data");
+                var token = apigee.from.token;
+                var filepath = grunt.config.get("exportProxyKVM.dest.data");
 		var done_count = 0;
 		var done = this.async();
 		var proxies_url = url + "/v1/organizations/" + org + "/apis";
@@ -51,7 +52,7 @@ module.exports = function(grunt) {
 									{
 										grunt.log.error(error);
 									}
-								}.bind( {proxy: proxy})).auth(userid, passwd, true);
+								}.bind( {proxy: proxy})).auth(userid, passwd, true, token);
 						    	// End kvm details
 						    };					    
 						} 
@@ -66,14 +67,14 @@ module.exports = function(grunt) {
                             grunt.verbose.writeln("================== export Proxy KVMs DONE()" );
 							done();
 						}
-					}.bind( {proxy_url: proxy_url, proxy: proxy})).auth(userid, passwd, true);
+					}.bind( {proxy_url: proxy_url, proxy: proxy})).auth(userid, passwd, true, token);
 				}
 			}
 			else
 			{
 				grunt.log.error(error);
 			}
-		}).auth(userid, passwd, true);
+		}).auth(userid, passwd, true, token);
 		
 		setTimeout(function() {
 		    grunt.verbose.writeln("================== Proxy KVMs Timeout done" );
@@ -148,7 +149,7 @@ module.exports = function(grunt) {
 					grunt.log.error(body);
 				}
 
-			}.bind( {kvm_url: kvm_url}) ).auth(userid, passwd, true);	
+			}.bind( {kvm_url: kvm_url}) ).auth(userid, passwd, true, token);	
 		});
 		//var done = this.async();
 	});
@@ -159,7 +160,8 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
-		var done_count =0;
+                var token = apigee.to.token;
+                var done_count =0;
 		var files;
 		url = url + "/v1/organizations/" + org + "/apis";
 		var done = this.async();
@@ -196,7 +198,7 @@ module.exports = function(grunt) {
 				grunt.log.ok('Processed ' + done_count + ' kvms');
 				done();
 			  }
-			}.bind( {kvm_del_url: kvm_del_url}) ).auth(userid, passwd, true);	
+			}.bind( {kvm_del_url: kvm_del_url}) ).auth(userid, passwd, true, token);	
 		});
 
 	});

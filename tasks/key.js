@@ -11,7 +11,8 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
-		var done_count =0;
+                var token = apigee.from.token;
+                var done_count =0;
 		var files;
 		url = url + "/v1/organizations/" + org + "/developers/";
 		var done = this.async();
@@ -64,7 +65,7 @@ module.exports = function(grunt) {
 						  if (error || status!=201)
 						  	grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.dev + ' - ' + this.create_key_url + ' -> ' + body); 
   				          callback(null, 'one');
-						}.bind( {dev:dev, create_key_url: create_key_url}) ).auth(userid, passwd, true);	
+						}.bind( {dev:dev, create_key_url: create_key_url}) ).auth(userid, passwd, true, token);	
 
 				    },
 				    function(callback){
@@ -84,7 +85,7 @@ module.exports = function(grunt) {
 						  if (error || status!=200)
 						  	grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.products + ' - ' + this.cKey + ' product assignment -> ' + body); 
 						  callback(null, 'two');
-						}.bind( {dev:dev, cKey: cKey, app_name: app.name, products: JSON.stringify(products_payload)}) ).auth(userid, passwd, true);	
+						}.bind( {dev:dev, cKey: cKey, app_name: app.name, products: JSON.stringify(products_payload)}) ).auth(userid, passwd, true, token);	
 				        
 				    },
 				    function(callback){
@@ -100,7 +101,7 @@ module.exports = function(grunt) {
 							if (error || status!=204)
 							  	grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.product + ' - ' + this.cKey + ' - ' + this.approve_key_url + ' -> ' + body); 
 							done_cnt++;							 
-							}.bind( {dev:dev, approve_key_url: approve_key_url, cKey: cKey, app_name: app.name, product: prods[k]}) ).auth(userid, passwd, true);	 
+							}.bind( {dev:dev, approve_key_url: approve_key_url, cKey: cKey, app_name: app.name, product: prods[k]}) ).auth(userid, passwd, true, token);	 
 							if (done_cnt == prods.length)
 							  	callback(null, 'three');
 						}      
@@ -128,7 +129,8 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
-		var done_flag =false;
+                var token = apigee.to.token;
+                var done_flag =false;
 		var file_count = 0;
 		var files;
 		url = url + "/v1/organizations/" + org + "/developers/";
@@ -168,7 +170,7 @@ module.exports = function(grunt) {
 				  	file_count++;
 				  if ((file_count == files.length) && (i == credentials.length))
 				  	done();
-				}.bind( {cKey: cKey}) ).auth(userid, passwd, true);	
+				}.bind( {cKey: cKey}) ).auth(userid, passwd, true, token);	
 			};
 		});
 	});
