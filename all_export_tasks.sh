@@ -8,5 +8,7 @@ grunt exportProxyKVM -v
 grunt exportEnvKVM -v
 grunt exportOrgKVM -v
 grunt exportFlowHooks -v
-exportTargetServers -v
 grunt exportReports -v
+grunt exportTargetServers -v
+grunt exportVirtualHosts -v
+grunt exportReferences -v

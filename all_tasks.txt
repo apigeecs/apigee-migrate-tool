@@ -25,6 +25,8 @@ exportProxies
 exportProxyKVM
 exportReports
 exportSharedFlows
+exportVirtualHosts
+exportReferences
 
 importTargetServers
 importApps

@@ -10,3 +10,5 @@ deleteProxyKVM
 deleteFlowHooks
 deleteSharedFlows
 deleteTargetServers
+deleteVirtualHosts
+deleteReferences

@@ -1,5 +1,4 @@
 #!/bin/bash
-grunt importTargetServers -v
 grunt importProxies -v
 grunt importSharedFlows -v
 grunt importDevs -v
@@ -11,3 +10,6 @@ grunt importEnvKVM -v
 grunt importOrgKVM -v
 grunt importFlowHooks -v
 grunt importReports -v
+grunt importTargetServers -v
+grunt importVirtualHosts -v
+grunt importReferences -v
