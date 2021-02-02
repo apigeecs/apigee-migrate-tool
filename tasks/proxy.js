@@ -27,10 +27,11 @@ module.exports = function(grunt) {
 			    	grunt.file.mkdir(filepath);
 
 			    	//Call proxy details
+				    var proxy_detail = '';
 					request(proxy_url, function (error, response, body) {
 						if (!error && response.statusCode == 200) {
 							grunt.verbose.writeln(body);
-						    var proxy_detail =  JSON.parse(body);
+						    proxy_detail =  JSON.parse(body);
                             // var proxy_file = filepath + "/" + proxy_detail.name;
 						    // gets max revision - May not be the deployed version
 						    var max_rev = proxy_detail.revision[proxy_detail.revision.length -1];
