@@ -12,6 +12,7 @@ module.exports = function(grunt) {
 		var env = apigee.from.env;
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
+		if(apigee.from.token) { var token = apigee.from.token; }
 		var fs = require('fs');
 		var done_count = 0;
 		var done = this.async();
@@ -45,7 +46,7 @@ module.exports = function(grunt) {
 				}
 			}.bind({
 				cur_flow_hook_type: flow_hook_type[i]
-			})).auth(userid, passwd, true);
+			})).auth(userid, passwd, true, token);
 		}
 		/*
 		setTimeout(function() {
@@ -65,6 +66,7 @@ module.exports = function(grunt) {
 			var env = apigee.to.env;
 			var userid = apigee.to.userid;
 			var passwd = apigee.to.passwd;
+			if(apigee.to.token) { var token = apigee.to.token; }
 			var done_count = 0;
 			var base_url = url + "/v1/organizations/" + org + "/environments/" + env + "/flowhooks";
 			// Read flow hook config file
@@ -97,7 +99,7 @@ module.exports = function(grunt) {
 						}
 					}.bind({
 						url: cur_url
-					})).auth(userid, passwd, true);
+					})).auth(userid, passwd, true, token);
 				} else {
 					// Delete shared flow if any configured
 					grunt.verbose.writeln("Removing any attached shared flow to " + cur_flow_hook + "\n");
@@ -115,7 +117,7 @@ module.exports = function(grunt) {
 						}
 					}.bind({
 						url: cur_url
-					})).auth(userid, passwd, true);
+					})).auth(userid, passwd, true, token);
 				}
 			}
 			var done = this.async();
@@ -127,6 +129,7 @@ module.exports = function(grunt) {
 		var env = apigee.to.env;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 		var done_count = 0;
 		var base_url = url + "/v1/organizations/" + org + "/environments/" + env + "/flowhooks";
 		for (var i = 0; i < flow_hook_type.length; i++) {
@@ -147,7 +150,7 @@ module.exports = function(grunt) {
 				}
 			}.bind({
 				url: cur_url
-			})).auth(userid, passwd, true);
+			})).auth(userid, passwd, true, token);
 		}
 		var done = this.async();
 	});

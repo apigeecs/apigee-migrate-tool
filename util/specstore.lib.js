@@ -67,7 +67,9 @@ SpecStore.prototype.executeSpecStoreRequest = function (options, cb) {
             /**
              * Check if the access token is available, if not generate one
              */
-            if(currentObj.apigeeAccessToken != null) {
+            if(currentObj.orgConfig.token) {
+                callback(null, currentObj.orgConfig.token);
+            }else if(currentObj.apigeeAccessToken != null) {
                 callback(null, currentObj.apigeeAccessToken);
             } else {
                 currentObj.generateAccessToken(function(token){

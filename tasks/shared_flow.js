@@ -8,7 +8,8 @@ module.exports = function(grunt) {
 		var url = apigee.from.url;
 		var org = apigee.from.org;
 		var userid = apigee.from.userid;
-		var passwd = apigee.from.passwd;
+        var passwd = apigee.from.passwd;
+        if(apigee.from.token) { var token = apigee.from.token; }
 		var fs = require('fs');
 		var filepath = grunt.config.get("exportSharedFlows.dest.data");
 		var done_count =0;
@@ -42,7 +43,7 @@ module.exports = function(grunt) {
     						    var shared_flow_download_url = url + "/" + shared_flow_detail.name + "/revisions/" + max_rev + "?format=bundle";
     						    grunt.verbose.writeln ("Fetching shared flow bundle  : " + shared_flow_download_url);
 
-    						    request(shared_flow_download_url).auth(userid, passwd, true)
+    						    request(shared_flow_download_url).auth(userid, passwd, true, token)
     							  .pipe(fs.createWriteStream(filepath + "/" + shared_flow_detail.name + '.zip'))
     							  .on('close', function () {
 
@@ -69,7 +70,7 @@ module.exports = function(grunt) {
                                 }
                                 grunt.log.error(error);
                             }
-    					}).auth(userid, passwd, true);
+    					}).auth(userid, passwd, true, token);
     			    	// End shared flow details
     			    }; 
 			    }
@@ -79,7 +80,7 @@ module.exports = function(grunt) {
                 grunt.verbose.writeln("ERROR getting SharedFlows: " + response.statusCode + " response: " + error);
 				grunt.log.error(error);
 			}
-		}).auth(userid, passwd, true);
+		}).auth(userid, passwd, true, token);
         /*
         setTimeout(function() {
             grunt.verbose.writeln("================== Shared Flows Timeout done" );
@@ -95,6 +96,7 @@ module.exports = function(grunt) {
         var org = apigee.to.org;
         var userid = apigee.to.userid;
         var passwd = apigee.to.passwd;
+        if(apigee.to.token) { var token = apigee.to.token; }
         var files;
         var done_count = 0;
         url = url + "/v1/organizations/" + org + "/sharedflows?action=import&name=";
@@ -128,7 +130,7 @@ module.exports = function(grunt) {
                     grunt.log.ok('Processed ' + done_count + ' shared flows');
                     done();
                 }
-            }.bind( {url: url+name}) ).auth(userid, passwd, true);
+            }.bind( {url: url+name}) ).auth(userid, passwd, true, token);
             var form = req.form();
             form.append('file', fs.createReadStream(filepath));
         });
@@ -140,6 +142,7 @@ module.exports = function(grunt) {
         var org = apigee.to.org;
         var userid = apigee.to.userid;
         var passwd = apigee.to.passwd;
+        if(apigee.to.token) { var token = apigee.to.token; }
         var done_count =0;
         var files;
         url = url + "/v1/organizations/" + org + "/sharedflows/";
@@ -173,7 +176,7 @@ module.exports = function(grunt) {
                     grunt.log.ok('Processed ' + done_count + ' shared flows');
                     done();
                 }
-            }.bind( {app_del_url: app_del_url}) ).auth(userid, passwd, true);
+            }.bind( {app_del_url: app_del_url}) ).auth(userid, passwd, true, token);
         });
     });
 
@@ -184,6 +187,7 @@ module.exports = function(grunt) {
             var env = apigee.to.env;
             var userid = apigee.to.userid;
             var passwd = apigee.to.passwd;
+            if(apigee.to.token) { var token = apigee.to.token; }
             var done_count =0;
             var done = this.async();
             url = url + "/v1/organizations/" + org ;
@@ -215,7 +219,7 @@ module.exports = function(grunt) {
                                 grunt.log.ok('Processed ' + done_count + ' shared flows');
                                 done();
                             }
-                        }).auth(userid, passwd, true);
+                        }).auth(userid, passwd, true, token);
                         // End shared flow deploy
                     };
 
@@ -224,7 +228,7 @@ module.exports = function(grunt) {
                 {
                     grunt.log.error(error);
                 }
-            }.bind( {shared_flow_url: shared_flow_url}) ).auth(userid, passwd, true);
+            }.bind( {shared_flow_url: shared_flow_url}) ).auth(userid, passwd, true, token);
     });
 
     grunt.registerTask('undeploySharedFlows', 'UnDeploy revision 1 on all shared flows for org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
@@ -233,6 +237,7 @@ module.exports = function(grunt) {
             var env = apigee.to.env;
             var userid = apigee.to.userid;
             var passwd = apigee.to.passwd;
+            if(apigee.to.token) { var token = apigee.to.token; }
             var done_count =0;
             var done = this.async();
             url = url + "/v1/organizations/" + org ;
@@ -261,7 +266,7 @@ module.exports = function(grunt) {
                                 grunt.log.ok('Processed ' + done_count + ' shared flows');
                                 done();
                             }
-                        }).auth(userid, passwd, true);
+                        }).auth(userid, passwd, true, token);
                         // End shared flow undeploy
                     };
 
@@ -270,7 +275,7 @@ module.exports = function(grunt) {
                 {
                     grunt.log.error(error);
                 }
-            }).auth(userid, passwd, true);
+            }).auth(userid, passwd, true, token);
     });
 
 };

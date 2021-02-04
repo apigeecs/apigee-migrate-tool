@@ -9,6 +9,7 @@ module.exports = function(grunt) {
 		var org = apigee.from.org;
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
+		if(apigee.from.token) { var token = apigee.from.token; }
 		var filepath = grunt.config.get("exportReports.dest.data");
 		var done_count =0;
 		var done = this.async();
@@ -42,7 +43,7 @@ module.exports = function(grunt) {
 			{
 				grunt.log.error(error);
 			}
-		}).auth(userid, passwd, true);
+		}).auth(userid, passwd, true, token);
 		/*
 		setTimeout(function() {
 		    grunt.verbose.writeln("================== Reports Timeout done" );
@@ -57,6 +58,7 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 		var done_count = 0;
 		var files;
 		url = url + "/v1/organizations/" + org + "/reports";
@@ -95,7 +97,7 @@ module.exports = function(grunt) {
 				done();
 			}
 
-			}.bind( {url: url}) ).auth(userid, passwd, true);
+			}.bind( {url: url}) ).auth(userid, passwd, true, token);
 		});
 	});
 
@@ -104,6 +106,7 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 		var done_count = 0;
 		var files = this.filesSrc;
 		var opts = {flatten: false};
@@ -135,7 +138,7 @@ module.exports = function(grunt) {
 				grunt.log.ok('Processed ' + done_count + ' reports');
 				done();
 			  }
-			}.bind( {del_url: del_url}) ).auth(userid, passwd, true);
+			}.bind( {del_url: del_url}) ).auth(userid, passwd, true, token);
 
 		});
 	});
