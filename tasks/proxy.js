@@ -9,6 +9,7 @@ module.exports = function(grunt) {
 		var org = apigee.from.org;
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
+		if(apigee.from.token) { if(apigee.from.token) { var token = apigee.from.token; } }
 		var fs = require('fs');
 		var filepath = grunt.config.get("exportProxies.dest.data");
 		var done_count =0;
@@ -38,7 +39,7 @@ module.exports = function(grunt) {
 						    var proxy_download_url = url + "/" + proxy_detail.name + "/revisions/" + max_rev + "?format=bundle";
 						    grunt.verbose.writeln ("\nFetching proxy bundle  : " + proxy_download_url);
 
-						    request(proxy_download_url).auth(userid, passwd, true)
+						    request(proxy_download_url).auth(userid, passwd, true, token)
 							  .pipe(fs.createWriteStream(filepath + "/" + proxy_detail.name + '.zip'))
 							  .on('close', function () {
 							    
@@ -63,16 +64,18 @@ module.exports = function(grunt) {
 								grunt.verbose.writeln('Error exporting' + proxy_detail.name);
 							}
 							grunt.log.error(error);
+							grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 						}
-					}).auth(userid, passwd, true);
+					}).auth(userid, passwd, true, token);
 			    	// End proxy details
 			    }; 			    
 			} 
 			else
 			{
 				grunt.log.error(error);
+				grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 			}
-		}).auth(userid, passwd, true);
+		}).auth(userid, passwd, true, token);
 		/*
 		setTimeout(function() {
 		    grunt.verbose.writeln("================== Proxies Timeout done" );
@@ -88,6 +91,7 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 		var files;
 		var done_count = 0;
 		url = url + "/v1/organizations/" + org + "/apis?action=import&name=";
@@ -121,7 +125,7 @@ module.exports = function(grunt) {
 					grunt.log.ok('Processed ' + done_count + ' proxies');
 					done();
 				}
-			}.bind( {url: url+name}) ).auth(userid, passwd, true);
+			}.bind( {url: url+name}) ).auth(userid, passwd, true, token);
 			var form = req.form();
 			form.append('file', fs.createReadStream(filepath));
 		});
@@ -133,6 +137,7 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 		var done_count =0;
 		var files;
 		url = url + "/v1/organizations/" + org + "/apis/";
@@ -166,7 +171,7 @@ module.exports = function(grunt) {
 					grunt.log.ok('Processed ' + done_count + ' proxies');
 					done();
 				}
-			}.bind( {app_del_url: app_del_url}) ).auth(userid, passwd, true);	
+			}.bind( {app_del_url: app_del_url}) ).auth(userid, passwd, true, token);	
 		});
 	});
 
@@ -177,6 +182,7 @@ module.exports = function(grunt) {
 			var env = apigee.to.env;
 			var userid = apigee.to.userid;
 			var passwd = apigee.to.passwd;
+			if(apigee.to.token) { var token = apigee.to.token; }
 			var done_count =0;
 			var done = this.async();
 			url = url + "/v1/organizations/" + org ;
@@ -205,7 +211,7 @@ module.exports = function(grunt) {
 								grunt.log.ok('Processed ' + done_count + ' proxies');
 								done();
 							}
-						}).auth(userid, passwd, true);
+						}).auth(userid, passwd, true, token);
 				    	// End proxy deploy
 				    }; 
 				    
@@ -213,8 +219,9 @@ module.exports = function(grunt) {
 				else
 				{
 					grunt.log.error(error);
+					grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 				}
-			}.bind( {proxy_url: proxy_url}) ).auth(userid, passwd, true);
+			}.bind( {proxy_url: proxy_url}) ).auth(userid, passwd, true, token);
 	});
 
 	grunt.registerTask('undeployProxies', 'UnDeploy revision 1 on all proxies for org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
@@ -223,6 +230,7 @@ module.exports = function(grunt) {
 			var env = apigee.to.env;
 			var userid = apigee.to.userid;
 			var passwd = apigee.to.passwd;
+			if(apigee.to.token) { var token = apigee.to.token; }
 			var done_count =0;
 			var done = this.async();
 			url = url + "/v1/organizations/" + org ;
@@ -244,6 +252,7 @@ module.exports = function(grunt) {
 							else
 							{
 								grunt.log.error(error);
+								grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 							}
 							done_count++;
 						  	if (done_count == proxies.length)
@@ -251,7 +260,7 @@ module.exports = function(grunt) {
 								grunt.log.ok('Processed ' + done_count + ' proxies');
 								done();
 							}
-						}).auth(userid, passwd, true);
+						}).auth(userid, passwd, true, token);
 				    	// End proxy undeploy
 				    }; 
 				    
@@ -259,8 +268,9 @@ module.exports = function(grunt) {
 				else
 				{
 					grunt.log.error(error);
+					grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 				}
-			}).auth(userid, passwd, true);
+			}).auth(userid, passwd, true, token);
 	});
 
 };

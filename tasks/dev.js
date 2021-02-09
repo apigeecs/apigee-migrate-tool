@@ -10,6 +10,7 @@ module.exports = function(grunt) {
 		var org = apigee.from.org;
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
+		if(apigee.from.token) { var token = apigee.from.token; }
 		var filepath = grunt.config.get("exportDevs.dest.data");
 		var dev_count = 0;
 		var done_count = 0;
@@ -44,7 +45,7 @@ module.exports = function(grunt) {
                     grunt.verbose.writeln("================== export Devs DONE()" );
 					done();
 				}
-			}.bind( {dev_url: dev_url}) ).auth(userid, passwd, true);
+			}.bind( {dev_url: dev_url}) ).auth(userid, passwd, true, token);
 		}
 
 
@@ -88,13 +89,15 @@ module.exports = function(grunt) {
 					}
 				}
 				else {
-					if (error)
+					if (error) {
 						grunt.log.error(error);
-					else
+					} else {
+						grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 						grunt.log.error(body);
+					}
 				}
 
-			}).auth(userid, passwd, true);
+			}).auth(userid, passwd, true, token);
 		}
 
 		// get All developers
@@ -114,6 +117,7 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 		var done_count = 0;
 		var files;
 		url = url + "/v1/organizations/" + org + "/developers";
@@ -151,7 +155,7 @@ module.exports = function(grunt) {
 				done();
 			}
 
-			}.bind( {url: url}) ).auth(userid, passwd, true);
+			}.bind( {url: url}) ).auth(userid, passwd, true, token);
 
 		});
 	});
@@ -161,6 +165,7 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 		var done_count = 0;
 		var files = this.filesSrc;
 		var opts = {flatten: false};
@@ -192,7 +197,7 @@ module.exports = function(grunt) {
 				grunt.log.ok('Processed ' + done_count + ' developers');
 				done();
 			  }
-			}.bind( {del_url: del_url}) ).auth(userid, passwd, true);
+			}.bind( {del_url: del_url}) ).auth(userid, passwd, true, token);
 
 		});
 	});

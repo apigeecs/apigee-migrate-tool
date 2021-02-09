@@ -5,6 +5,7 @@ module.exports = {
 		url: 'https://api.enterprise.apigee.com',
 		userid: 'admin@google.com',
 		passwd: 'SuperSecret123',
+		token: 'myApigeeToken',
 		org: 'org1',
 		env: 'test'
 	},
@@ -13,6 +14,7 @@ module.exports = {
 		url: 'https://api.enterprise.apigee.com',
 		userid: 'admin@google.com',
 		passwd: 'SuperSecret123!9',
+		token: 'myApigeeToken',
 		org: 'org2',
 		env: 'test'
 	}

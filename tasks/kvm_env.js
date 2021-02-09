@@ -11,6 +11,7 @@ module.exports = function(grunt) {
 		var env = apigee.from.env;
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
+		if(apigee.from.token) { var token = apigee.from.token; }
 		var filepath = grunt.config.get("exportEnvKVM.dest.data");
 		var done_count =0;
 		var done = this.async();
@@ -41,6 +42,7 @@ module.exports = function(grunt) {
 						else
 						{
 							grunt.log.error(error);
+							grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 						}
 						done_count++;
 						if (done_count == kvms.length)
@@ -49,15 +51,16 @@ module.exports = function(grunt) {
 							grunt.verbose.writeln("================== export ENV KVM DONE()" );
 							done();
 						}
-					}.bind( {env: env})).auth(userid, passwd, true);
+					}.bind( {env: env})).auth(userid, passwd, true, token);
 					// End kvm details
 				};
 			}
 			else
 			{
 				grunt.log.error(error);
+				grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 			}
-		}.bind( {env_url: env_url, env: env})).auth(userid, passwd, true);
+		}.bind( {env_url: env_url, env: env})).auth(userid, passwd, true, token);
 		/*
 		setTimeout(function() {
 		    grunt.verbose.writeln("================== ENV KVMs Timeout done" );
@@ -73,6 +76,7 @@ module.exports = function(grunt) {
 		var env = apigee.to.env;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 		var done_count =0;
 		var files;
 		url = url + "/v1/organizations/" + org + "/";
@@ -138,7 +142,7 @@ module.exports = function(grunt) {
 						grunt.log.error(body);
 					}
 
-				}.bind( {kvm_url: kvm_url}) ).auth(userid, passwd, true);
+				}.bind( {kvm_url: kvm_url}) ).auth(userid, passwd, true, token);
 			}
 		});
 		//var done = this.async();
@@ -151,6 +155,7 @@ module.exports = function(grunt) {
 		var env = apigee.to.env;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 		var done_count =0;
 		var files;
 		url = url + "/v1/organizations/" + org + "/";
@@ -193,7 +198,7 @@ module.exports = function(grunt) {
 					grunt.log.ok('Processed ' + done_count + ' kvms');
 					done();
 				  }
-				}.bind( {kvm_del_url: kvm_del_url}) ).auth(userid, passwd, true);
+				}.bind( {kvm_del_url: kvm_del_url}) ).auth(userid, passwd, true, token);
 			}
 		});
 

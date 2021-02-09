@@ -15,6 +15,7 @@ module.exports = function(grunt) {
 		var url = apigee.from.url;
 		var userid = apigee.from.userid;
     var passwd = apigee.from.passwd;
+    if(apigee.from.token) { var token = apigee.from.token; }
     var filepath = grunt.config.get("export" + ENTITY_COMMAND_NAME + ".dest.data");
     var done_count = 0;
     var done = this.async();
@@ -58,14 +59,15 @@ module.exports = function(grunt) {
                 grunt.verbose.writeln("================== export " + APIGEE_ENTITY_PLURAL + " DONE()");
                 done();
               }
-            }).auth(userid, passwd, true);
+            }).auth(userid, passwd, true, token);
             // End target_server details
           };
         }
       } else {
         grunt.log.error(error);
+        grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
       }
-    }).auth(userid, passwd, true);
+    }).auth(userid, passwd, true, token);
   });
 
 
@@ -75,6 +77,7 @@ module.exports = function(grunt) {
 		var env = apigee.to.env;
     var userid = apigee.to.userid;
     var passwd = apigee.to.passwd;
+    if(apigee.to.token) { var token = apigee.to.token; }
     var done_count = 0;
     var files;
     url = url + "/v1/organizations/" + org + "/environments/" +  env + APIGEE_ENTITY_REQUEST_PATH;
@@ -114,7 +117,7 @@ module.exports = function(grunt) {
 
       }.bind({
         url: url
-      })).auth(userid, passwd, true);
+      })).auth(userid, passwd, true, token);
 
     });
   });
@@ -126,6 +129,7 @@ module.exports = function(grunt) {
 		var env = apigee.to.env;
     var userid = apigee.to.userid;
     var passwd = apigee.to.passwd;
+    if(apigee.to.token) { var token = apigee.to.token; }
     var done_count = 0;
     var files = this.filesSrc;
     var opts = {
@@ -158,7 +162,7 @@ module.exports = function(grunt) {
         }
       }.bind({
         del_url: del_url
-      })).auth(userid, passwd, true);
+      })).auth(userid, passwd, true, token);
 
     });
   });

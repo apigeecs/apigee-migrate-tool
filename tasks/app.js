@@ -10,6 +10,7 @@ module.exports = function(grunt) {
 		var org = apigee.from.org;
 		var userid = apigee.from.userid;
 		var passwd = apigee.from.passwd;
+		if(apigee.from.token) { var token = apigee.from.token; }
 		var filepath = grunt.config.get("exportApps.dest.data");
 		var done_count =0;
 		var dev_count =0;
@@ -70,7 +71,7 @@ module.exports = function(grunt) {
                             grunt.verbose.writeln("================== export Apps DONE()" );
 							done();
 						}
-					}).auth(userid, passwd, true);
+					}).auth(userid, passwd, true, token);
 				}
 				else {
 					if (dev_error )
@@ -78,7 +79,7 @@ module.exports = function(grunt) {
 					else
 						grunt.log.error(dev_body);
 				}
-			}).auth(userid, passwd, true);
+			}).auth(userid, passwd, true, token);
 			// End Developer details
 		}
 
@@ -121,13 +122,15 @@ module.exports = function(grunt) {
 					}
 				}
 				else {
-					if (error)
+					if (error) {
 						grunt.log.error(error);
-					else
+					} else {
+						grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 						grunt.log.error(body);
+					}
 				}
 
-			}).auth(userid, passwd, true);
+			}).auth(userid, passwd, true, token);
 		}
 
 		iterateOverDevs(null, url, dumpApps);
@@ -144,7 +147,8 @@ module.exports = function(grunt) {
 	    var url = apigee.to.url;
 	    var org = apigee.to.org;
 	    var userid = apigee.to.userid;
-	    var passwd = apigee.to.passwd;
+		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 	    var done_count = 0;
 	    var files;
 	    url = url + "/v1/organizations/" + org + "/developers/";
@@ -231,7 +235,7 @@ module.exports = function(grunt) {
 	                                    callback();
 	                                }
 	                                // END of fix part1 issue #26
-	                            }.bind({dev: dev,status_url: status_url,app_name: app.name})).auth(userid, passwd, true);
+	                            }.bind({dev: dev,status_url: status_url,app_name: app.name})).auth(userid, passwd, true, token);
 	                        }
 	                        // START of fix part 2 issue #26
 	                        else {
@@ -271,7 +275,7 @@ module.exports = function(grunt) {
 	                                callback();
 	                            }
 	                            // END of fix part 3 issue #26					
-	                        }.bind({delete_url: delete_url})).auth(userid, passwd, true);
+	                        }.bind({delete_url: delete_url})).auth(userid, passwd, true, token);
 	                        // END of Key DELETE
 	                    } else {
 	                        grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create app  ' + this.app_url + ' -> ' + body);
@@ -281,7 +285,7 @@ module.exports = function(grunt) {
 	                    grunt.log.error("ERROR - from App URL : " + app_url);
 	                    grunt.log.error(body);
 	                }
-	            }.bind({app_url: app_url})).auth(userid, passwd, true);
+	            }.bind({app_url: app_url})).auth(userid, passwd, true, token);
 	    });
 	});
 
@@ -291,6 +295,7 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		if(apigee.to.token) { var token = apigee.to.token; }
 		var done_count =0;
 		var files;
 		url = url + "/v1/organizations/" + org + "/developers/";
@@ -328,7 +333,7 @@ module.exports = function(grunt) {
 				grunt.log.ok('Processed ' + done_count + ' apps');
 				done();
 			  }
-			}.bind( {app_del_url: app_del_url}) ).auth(userid, passwd, true);	
+			}.bind( {app_del_url: app_del_url}) ).auth(userid, passwd, true, token);	
 		});
 
 	});
