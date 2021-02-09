@@ -33,6 +33,7 @@ module.exports = function(grunt) {
 				} else {
 					grunt.verbose.writeln(error);
 					grunt.log.error(error);
+					grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 				}
 				done_count++;
 				if (done_count == flow_hook_type.length) {

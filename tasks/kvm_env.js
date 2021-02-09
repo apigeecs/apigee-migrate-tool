@@ -42,6 +42,7 @@ module.exports = function(grunt) {
 						else
 						{
 							grunt.log.error(error);
+							grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 						}
 						done_count++;
 						if (done_count == kvms.length)
@@ -57,6 +58,7 @@ module.exports = function(grunt) {
 			else
 			{
 				grunt.log.error(error);
+				grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 			}
 		}.bind( {env_url: env_url, env: env})).auth(userid, passwd, true, token);
 		/*
