@@ -51,6 +51,7 @@ module.exports = function(grunt) {
 							{
 								grunt.verbose.writeln('Error Exporting Product ' + product_detail.name);
 								grunt.log.error(error);
+								grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 							}
 
 							done_count++;
@@ -69,6 +70,7 @@ module.exports = function(grunt) {
 			else
 			{
 				grunt.log.error(error);
+				grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 			}
 		}).auth(userid, passwd, true, token);
 		/*

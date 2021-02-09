@@ -42,6 +42,7 @@ module.exports = function(grunt) {
 			else
 			{
 				grunt.log.error(error);
+				grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 			}
 		}).auth(userid, passwd, true, token);
 		/*

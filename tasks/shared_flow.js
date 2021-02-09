@@ -69,6 +69,7 @@ module.exports = function(grunt) {
                                     grunt.verbose.writeln('Error exporting: ' + response.statusCode + " URL: " + shared_flow_url);
                                 }
                                 grunt.log.error(error);
+                                grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
                             }
     					}).auth(userid, passwd, true, token);
     			    	// End shared flow details
@@ -227,6 +228,7 @@ module.exports = function(grunt) {
                 else
                 {
                     grunt.log.error(error);
+                    grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
                 }
             }.bind( {shared_flow_url: shared_flow_url}) ).auth(userid, passwd, true, token);
     });
@@ -259,6 +261,7 @@ module.exports = function(grunt) {
                             else
                             {
                                 grunt.log.error(error);
+                                grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
                             }
                             done_count++;
                               if (done_count == shared_flows.length)
@@ -274,6 +277,7 @@ module.exports = function(grunt) {
                 else
                 {
                     grunt.log.error(error);
+                    grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
                 }
             }).auth(userid, passwd, true, token);
     });

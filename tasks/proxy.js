@@ -64,6 +64,7 @@ module.exports = function(grunt) {
 								grunt.verbose.writeln('Error exporting' + proxy_detail.name);
 							}
 							grunt.log.error(error);
+							grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 						}
 					}).auth(userid, passwd, true, token);
 			    	// End proxy details
@@ -72,6 +73,7 @@ module.exports = function(grunt) {
 			else
 			{
 				grunt.log.error(error);
+				grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 			}
 		}).auth(userid, passwd, true, token);
 		/*
@@ -217,6 +219,7 @@ module.exports = function(grunt) {
 				else
 				{
 					grunt.log.error(error);
+					grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 				}
 			}.bind( {proxy_url: proxy_url}) ).auth(userid, passwd, true, token);
 	});
@@ -249,6 +252,7 @@ module.exports = function(grunt) {
 							else
 							{
 								grunt.log.error(error);
+								grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 							}
 							done_count++;
 						  	if (done_count == proxies.length)
@@ -264,6 +268,7 @@ module.exports = function(grunt) {
 				else
 				{
 					grunt.log.error(error);
+					grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 				}
 			}).auth(userid, passwd, true, token);
 	});

@@ -89,10 +89,12 @@ module.exports = function(grunt) {
 					}
 				}
 				else {
-					if (error)
+					if (error) {
 						grunt.log.error(error);
-					else
+					} else {
+						grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 						grunt.log.error(body);
+					}
 				}
 
 			}).auth(userid, passwd, true, token);

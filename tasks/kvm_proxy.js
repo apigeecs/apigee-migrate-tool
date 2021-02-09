@@ -51,6 +51,7 @@ module.exports = function(grunt) {
 									else
 									{
 										grunt.log.error(error);
+										grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 									}
 								}.bind( {proxy: proxy})).auth(userid, passwd, true, token);
 						    	// End kvm details
@@ -59,6 +60,7 @@ module.exports = function(grunt) {
 						else
 						{
 							grunt.log.error(error);
+							grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 						}
 						done_count++;
 						if (done_count == proxies.length)
@@ -73,6 +75,7 @@ module.exports = function(grunt) {
 			else
 			{
 				grunt.log.error(error);
+				grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 			}
 		}).auth(userid, passwd, true, token);
 		
@@ -148,6 +151,7 @@ module.exports = function(grunt) {
 				{
 					grunt.log.error("ERROR - from kvm URL : " + kvm_url );
 					grunt.log.error(body);
+					grunt.log.error("statusCode: " + response.statusCode + ", statusMessage: " + response.statusMessage);
 				}
 
 			}.bind( {kvm_url: kvm_url}) ).auth(userid, passwd, true, token);	
