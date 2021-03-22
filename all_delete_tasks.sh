@@ -1,12 +1,13 @@
 #!/bin/bash
-deleteKeys
-deleteApps
-deleteDevs
-deleteProducts
-deleteProxies
-deleteEnvKVM
-deleteOrgKVM
-deleteProxyKVM
-deleteFlowHooks
-deleteSharedFlows
-deleteTargetServers
+grunt deleteKeys -v
+grunt deleteApps -v
+grunt deleteDevs -v
+grunt deleteProducts -v
+grunt deleteProxies -v
+grunt deleteEnvKVM -v
+grunt deleteOrgKVM -v
+grunt deleteProxyKVM -v
+grunt deleteFlowHooks -v
+grunt deleteSharedFlows -v
+grunt deleteTargetServers -v
+grunt deleteKeyStores -v

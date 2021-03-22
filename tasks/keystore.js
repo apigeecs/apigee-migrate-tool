@@ -150,7 +150,7 @@ module.exports = function (grunt) {
 		let f = grunt.option('src');
 		if (f) {
 			let opts = { flatten: false };
-		
+
 			grunt.verbose.writeln('src pattern = ' + f);
 			keystores = grunt.file.expand(opts, f);
 		}
@@ -211,46 +211,81 @@ module.exports = function (grunt) {
 		}, 1000);
 	});
 
-	/*
-		grunt.registerMultiTask('deleteProducts', 'Delete all products from org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
-			let url = apigee.to.url;
-			let org = apigee.to.org;
-			let userid = apigee.to.userid;
-			let passwd = apigee.to.passwd;
-			let files = this.filesSrc;
-			let done_count = 0;
-			let opts = {flatten: false};
-			let f = grunt.option('src');
-			if (f)
-			{
-				grunt.verbose.writeln('src pattern = ' + f);
-				files = grunt.file.expand(opts,f);
-			}
-			url = url + "/v1/organizations/" + org + "/apiproducts/";
-			let done = this.async();
-			files.forEach(function(filepath) {
-				let content = grunt.file.read(filepath);
-				let product = JSON.parse(content);
-				let del_url = url + product.name;
-				grunt.verbose.writeln(del_url);	
-				request.del(del_url, function(error, response, body){
-					let status = 999;
-					if (response)	
+	grunt.registerMultiTask('deleteKeyStores', 'Delete all keystores from org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
+		let url = apigee.to.url;
+		let org = apigee.to.org;
+		let env = apigee.to.env;
+		let userid = apigee.to.userid;
+		let passwd = apigee.to.passwd;
+		let keystores = this.filesSrc;
+		let pending_tasks = 0;
+		let done = this.async();
+
+		const waitForDelete = function (url, callback) {
+			let boundcb = callback.bind({ url: url });
+
+			++pending_tasks;
+			let r = request.del(url, function (error, response, body) {
+				boundcb(error, response, body);
+				--pending_tasks;
+			}).auth(userid, passwd, true);
+
+			return r;
+		}
+
+		grunt.verbose.writeln("========================= delete KeyStores ===========================");
+
+		// Build keystore list
+		let f = grunt.option('src');
+		if (f) {
+			let opts = { flatten: false };
+
+			grunt.verbose.writeln('src pattern = ' + f);
+			keystores = grunt.file.expand(opts, f);
+		}
+
+		url = url + "/v1/organizations/" + org + "/environments/" + env + "/keystores";
+
+		// Delete keystores
+		keystores.forEach(function (keystorePath) {
+			let keystoreName = path.basename(keystorePath);
+
+			let del_url = url + "/" + keystoreName;
+			waitForDelete(del_url, function (error, response, body) {
+				let status = 999;
+				if (response)
 					status = response.statusCode;
-					grunt.verbose.writeln('Resp [' + status + '] for product deletion ' + this.del_url + ' -> ' + body);
-					if (error || status!=200)
-					{ 
-						grunt.verbose.error('ERROR Resp [' + status + '] for product deletion ' + this.del_url + ' -> ' + body); 
+
+				if (!error && status == 200) {
+					grunt.verbose.writeln('Resp [' + status + '] for keystore deletion ' + this.url + ' -> ' + body);
+					grunt.verbose.writeln('Deleted keystore ' + keystoreName);
+				}
+				else {
+					grunt.log.error('ERROR Resp [' + status + '] for keystore deletion ' + this.url + ' -> ' + body);
+					if (error) {
+						grunt.log.error(error);
 					}
-					done_count++;
-					if (done_count == files.length)
-					{
-						grunt.log.ok('Processed ' + done_count + ' products');
-						done();
-					}
-				}.bind( {del_url: del_url}) ).auth(userid, passwd, true);
-	
+				}
 			});
 		});
-	*/
+
+		// Set a 1s timer to wait for pending requests to complete
+		let intervalId = setInterval(function () {
+			if (pending_tasks <= 0) {
+				if (keystores.length <= 0) {
+					grunt.verbose.writeln("No KeyStores");
+				}
+				else {
+					grunt.log.ok('Deleted ' + keystores.length + ' keystores');
+				}
+				grunt.verbose.writeln("================== delete keystores DONE()");
+
+				clearInterval(intervalId);
+				done();
+			}
+			else {
+				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+			}
+		}, 1000);
+	});
 };

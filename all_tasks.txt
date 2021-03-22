@@ -10,6 +10,7 @@ deleteProxyKVM
 deleteReports
 deleteSharedFlows
 deleteTargetServers
+deleteKeyStores
 
 deployProxies to org
 deploySharedFlows to org
