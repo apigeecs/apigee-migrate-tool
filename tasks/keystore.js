@@ -8,7 +8,7 @@ const apigee = require('../config.js');
 
 
 module.exports = function (grunt) {
-	grunt.registerTask('exportKeyStores', 'Export all keystores from org ' + apigee.from.org + " [" + apigee.from.version + "]", function () {
+	grunt.registerTask('exportKeyStores', 'Export all keystores from org ' + apigee.from.org + ' environment ' + apigee.from.env + " [" + apigee.from.version + "]", function () {
 		let url = apigee.from.url;
 		let org = apigee.from.org;
 		let env = apigee.from.env;
@@ -122,7 +122,7 @@ module.exports = function (grunt) {
 		}, 1000);
 	});
 
-	grunt.registerMultiTask('importKeyStores', 'Import all keystores to org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
+	grunt.registerMultiTask('importKeyStores', 'Import all keystores to org ' + apigee.to.org + ' environment ' + apigee.to.env + " [" + apigee.to.version + "]", function () {
 		let url = apigee.to.url;
 		let org = apigee.to.org;
 		let env = apigee.to.env;
@@ -211,7 +211,7 @@ module.exports = function (grunt) {
 		}, 1000);
 	});
 
-	grunt.registerMultiTask('deleteKeyStores', 'Delete all keystores from org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
+	grunt.registerMultiTask('deleteKeyStores', 'Delete all keystores from org ' + apigee.to.org + ' environment ' + apigee.to.env + " [" + apigee.to.version + "]", function () {
 		let url = apigee.to.url;
 		let org = apigee.to.org;
 		let env = apigee.to.env;

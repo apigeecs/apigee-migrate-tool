@@ -1,5 +1,6 @@
 #!/bin/bash
 grunt importKeyStores -v
+grunt importReferences -v
 grunt importTargetServers -v
 grunt importProxies -v
 grunt importSharedFlows -v
