@@ -2,9 +2,9 @@
 'use strict';
 
 const { profileEnd } = require('console');
-let path = require('path');
-let request = require('request');
-let apigee = require('../config.js');
+const path = require('path');
+const request = require('request');
+const apigee = require('../config.js');
 
 
 module.exports = function (grunt) {
@@ -21,10 +21,12 @@ module.exports = function (grunt) {
 
 		const waitForRequest = function (url, callback) {
 			++pending_tasks;
-			request(url, function (error, response, body) {
+			let r = request(url, function (error, response, body) {
 				callback(error, response, body);
 				--pending_tasks;
 			}).auth(userid, passwd, true);
+
+			return r;
 		}
 
 		grunt.verbose.writeln("========================= export KeyStores ===========================");
@@ -55,7 +57,7 @@ module.exports = function (grunt) {
 
 							// Get certificates
 							if (keystore_detail.certs) {
-								grunt.verbose.writeln("Exporting " + keystore_detail.certs.length + " certificates");
+								grunt.verbose.writeln("Exporting " + keystore_detail.certs.length + " certificates from keystore " + keystore_detail.name);
 
 								let cert_path = path.join(keystore_path, "certs");
 								grunt.file.mkdir(cert_path);
@@ -114,54 +116,101 @@ module.exports = function (grunt) {
 				clearInterval(intervalId);
 				done();
 			}
+			else {
+				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+			}
 		}, 1000);
 	});
 
-	/*
-	grunt.registerMultiTask('importProducts', 'Import all products to org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
+	grunt.registerMultiTask('importKeyStores', 'Import all keystores to org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
 		let url = apigee.to.url;
 		let org = apigee.to.org;
+		let env = apigee.to.env;
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
-		let files = this.filesSrc;
-		let done_count=0;
-		let opts = {flatten: false};
-		let f = grunt.option('src');
-		if (f)
-		{
-			grunt.verbose.writeln('src pattern = ' + f);
-			files = grunt.file.expand(opts,f);
-		}
-		url = url + "/v1/organizations/" + org + "/apiproducts";
+		let keystores = this.filesSrc;
+		let pending_tasks = 0;
 		let done = this.async();
 
-		files.forEach(function(filepath) {
-			let content = grunt.file.read(filepath);
-			//grunt.verbose.writeln(content);	
-			request.post({
-				headers: {'content-type' : 'application/json'},
-				url:     url,
-				body:    content
-			}, function(error, response, body){
+		const waitForPost = function (url, opts, callback) {
+			let boundcb = callback.bind({ url: url });
+
+			++pending_tasks;
+			let r = request.post({ url: url, ...opts }, function (error, response, body) {
+				boundcb(error, response, body);
+				--pending_tasks;
+			}).auth(userid, passwd, true);
+
+			return r;
+		}
+
+		grunt.verbose.writeln("========================= import KeyStores ===========================");
+
+		// Build source list
+		let f = grunt.option('src');
+		if (f) {
+			let opts = { flatten: false };
+		
+			grunt.verbose.writeln('src pattern = ' + f);
+			keystores = grunt.file.expand(opts, f);
+		}
+
+		url = url + "/v1/organizations/" + org + "/environments/" + env + "/keystores";
+
+		// Create keystores
+		keystores.forEach(function (keystorePath) {
+			let keystoreDef = path.join(keystorePath, "data");
+			let keystoreName = path.basename(keystorePath);
+
+			if (!grunt.file.exists(keystoreDef)) {
+				grunt.verbose.writeln("No definition found for keystore " + keystoreName);
+				return;
+			}
+
+			let content = grunt.file.read(keystoreDef);
+
+			grunt.verbose.writeln("Creating keystore " + keystoreName);
+			waitForPost(url, {
+				headers: { 'content-type': 'application/json' },
+				body: content
+			}, function (error, response, body) {
 				let status = 999;
-				if (response)	
-				status = response.statusCode;
-				grunt.verbose.writeln('Resp [' + status + '] for product creation ' + this.url + ' -> ' +body);
-				if (error || status!=201)
-				{ 
-					grunt.verbose.error('ERROR Resp [' + status + '] for product creation ' + this.url + ' -> ' +body); 
+				if (response)
+					status = response.statusCode;
+
+				if (!error && status == 201) {
+					grunt.verbose.writeln('Resp [' + status + '] for keystore creation ' + this.url + ' -> ' + body);
+					grunt.verbose.writeln('Created keystore ' + keystoreName);
 				}
-			 done_count++;
-			if (done_count == files.length)
-			{
-				grunt.log.ok('Processed ' + done_count + ' products');
+				else {
+					grunt.log.error('ERROR Resp [' + status + '] for keystore creation ' + this.url + ' -> ' + body);
+					if (error) {
+						grunt.log.error(error);
+					}
+				}
+			});
+		});
+
+		// Set a 1s timer to wait for pending requests to complete
+		let intervalId = setInterval(function () {
+			if (pending_tasks <= 0) {
+				if (keystores.length <= 0) {
+					grunt.verbose.writeln("No KeyStores");
+				}
+				else {
+					grunt.log.ok('Processed ' + keystores.length + ' keystores');
+				}
+				grunt.verbose.writeln("================== import keystores DONE()");
+
+				clearInterval(intervalId);
 				done();
 			}
-			}.bind( {url: url}) ).auth(userid, passwd, true);
-
-		});
+			else {
+				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+			}
+		}, 1000);
 	});
-*/
+
 	/*
 		grunt.registerMultiTask('deleteProducts', 'Delete all products from org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
 			let url = apigee.to.url;

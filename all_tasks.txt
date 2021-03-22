@@ -27,6 +27,7 @@ exportReports
 exportSharedFlows
 exportKeyStores
 
+importKeyStores
 importTargetServers
 importApps
 importDevs
