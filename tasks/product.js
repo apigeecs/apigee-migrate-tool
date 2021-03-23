@@ -42,22 +42,33 @@ module.exports = function(grunt) {
 							if (!error && response.statusCode == 200) {
 								grunt.verbose.writeln("PRODUCT " + body);
 							    var product_detail =  JSON.parse(body);
-							    var dev_file = filepath + "/" + product_detail.name;
-							    grunt.file.write(dev_file, body);
 
-							    grunt.verbose.writeln('Exported Product ' + product_detail.name);
+									if (product_detail && product_detail.name) {
+										var dev_file = filepath + "/" + product_detail.name;
+										grunt.file.write(dev_file, body);
+
+										grunt.verbose.writeln('Exported Product ' + product_detail.name);
+									}
+									else
+									{
+										grunt.log.error('Error parsing product ' + product_url);
+										grunt.verbose.writeln(body);
+									}
 							}
 							else
 							{
-								grunt.verbose.writeln('Error Exporting Product ' + product_detail.name);
-								grunt.log.error(error);
+								grunt.log.error('Error exporting product ' + product_url);
+
+								if (error) {
+									grunt.log.error(error);
+								}
 							}
 
 							done_count++;
 							if (done_count == products.length)
 							{
 								grunt.log.ok('Processed ' + done_count + ' products');
-	                            grunt.verbose.writeln("================== export products DONE()" );
+	              grunt.verbose.writeln("================== export products DONE()" );
 								done();
 							}
 						}).auth(userid, passwd, true);
