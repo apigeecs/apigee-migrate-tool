@@ -1,7 +1,6 @@
 /*jslint node: true */
 'use strict';
 
-const { profileEnd } = require('console');
 const path = require('path');
 const request = require('request');
 const apigee = require('../config.js');
@@ -183,7 +182,7 @@ module.exports = function (grunt) {
 					grunt.verbose.writeln('Created keystore ' + keystoreName);
 				}
 				else {
-					grunt.log.error('ERROR Resp [' + status + '] for keystore creation ' + this.url + ' -> ' + body);
+					grunt.log.error('ERROR Resp [' + status + '] for keystore creation ' + keystoreName + ' -> ' + body);
 					if (error) {
 						grunt.log.error(error);
 					}
@@ -261,7 +260,7 @@ module.exports = function (grunt) {
 					grunt.verbose.writeln('Deleted keystore ' + keystoreName);
 				}
 				else {
-					grunt.log.error('ERROR Resp [' + status + '] for keystore deletion ' + this.url + ' -> ' + body);
+					grunt.log.error('ERROR Resp [' + status + '] for keystore deletion ' + keystoreName + ' -> ' + body);
 					if (error) {
 						grunt.log.error(error);
 					}

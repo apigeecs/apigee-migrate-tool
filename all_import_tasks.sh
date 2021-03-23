@@ -2,6 +2,7 @@
 grunt importKeyStores -v
 grunt importReferences -v
 grunt importTargetServers -v
+grunt importVirtualHosts -v
 grunt importProxies -v
 grunt importSharedFlows -v
 grunt importDevs -v

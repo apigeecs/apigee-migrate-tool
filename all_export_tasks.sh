@@ -12,3 +12,4 @@ grunt exportTargetServers -v
 grunt exportReports -v
 grunt exportKeyStores -v
 grunt exportReferences -v
+grunt exportVirtualHosts -v

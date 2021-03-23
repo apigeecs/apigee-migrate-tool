@@ -9,6 +9,7 @@ grunt deleteOrgKVM -v
 grunt deleteProxyKVM -v
 grunt deleteFlowHooks -v
 grunt deleteSharedFlows -v
+grunt deleteVirtualHosts -v
 grunt deleteTargetServers -v
 grunt deleteReferences -v
 grunt deleteKeyStores -v
