@@ -2,8 +2,8 @@
 'use strict';
 
 const path = require('path');
-const request = require('request');
 const apigee = require('../config.js');
+const asyncrequest = require('../util/asyncrequest.lib.js');
 
 
 module.exports = function (grunt) {
@@ -15,18 +15,9 @@ module.exports = function (grunt) {
 		let passwd = apigee.from.passwd;
 		let filepath = grunt.config.get("exportKeyStores.dest.data");
 		let keystores = [];
-		let pending_tasks = 0;
 		let done = this.async();
 
-		const waitForRequest = function (url, callback) {
-			++pending_tasks;
-			let r = request(url, function (error, response, body) {
-				callback(error, response, body);
-				--pending_tasks;
-			}).auth(userid, passwd, true);
-
-			return r;
-		}
+		const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= export KeyStores ===========================");
 
@@ -34,7 +25,7 @@ module.exports = function (grunt) {
 		grunt.verbose.writeln("getting keystores..." + url);
 		url = url + "/v1/organizations/" + org + "/environments/" + env + "/keystores";
 
-		waitForRequest(url, function (error, response, body) {
+		waitForGet(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				grunt.log.write("KEYSTORES: " + body);
 				keystores = JSON.parse(body);
@@ -46,7 +37,7 @@ module.exports = function (grunt) {
 
 					// Get keystore details
 					grunt.verbose.writeln("KEYSTORE URL: " + keystore_url.length + " " + keystore_url);
-					waitForRequest(keystore_url, function (error, response, body) {
+					waitForGet(keystore_url, function (error, response, body) {
 						if (!error && response.statusCode == 200) {
 							grunt.verbose.writeln("KEYSTORE " + body);
 							let keystore_detail = JSON.parse(body);
@@ -68,7 +59,7 @@ module.exports = function (grunt) {
 
 									grunt.verbose.writeln("Exporting certificate" + cert + " from " + cert_url);
 
-									waitForRequest(cert_url, function (error, response, body) {
+									waitForGet(cert_url, function (error, response, body) {
 										if (!error && response.statusCode == 200) {
 											grunt.file.write(cert_file, body);
 											grunt.verbose.writeln('Exported certificate ' + cert);
@@ -101,24 +92,17 @@ module.exports = function (grunt) {
 			}
 		});
 
-		// Set a 1s timer to wait for pending requests to complete
-		let intervalId = setInterval(function () {
-			if (pending_tasks <= 0) {
-				if (keystores.length <= 0) {
-					grunt.verbose.writeln("No KeyStores");
-				}
-				else {
-					grunt.log.ok('Processed ' + keystores.length + ' keystores');
-				}
-				grunt.verbose.writeln("================== export keystores DONE()");
-
-				clearInterval(intervalId);
-				done();
+		waitForCompletion(function () {
+			if (keystores.length <= 0) {
+				grunt.verbose.writeln("No KeyStores");
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.log.ok('Processed ' + keystores.length + ' keystores');
 			}
-		}, 1000);
+			grunt.verbose.writeln("================== export keystores DONE()");
+
+			done();
+		});
 	});
 
 	grunt.registerMultiTask('importKeyStores', 'Import all keystores to org ' + apigee.to.org + ' environment ' + apigee.to.env + " [" + apigee.to.version + "]", function () {
@@ -128,20 +112,9 @@ module.exports = function (grunt) {
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
 		let keystores = this.filesSrc;
-		let pending_tasks = 0;
 		let done = this.async();
 
-		const waitForPost = function (url, opts, callback) {
-			let boundcb = callback.bind({ url: url });
-
-			++pending_tasks;
-			let r = request.post({ url: url, ...opts }, function (error, response, body) {
-				boundcb(error, response, body);
-				--pending_tasks;
-			}).auth(userid, passwd, true);
-
-			return r;
-		}
+		const { waitForPost, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= import KeyStores ===========================");
 
@@ -190,24 +163,17 @@ module.exports = function (grunt) {
 			});
 		});
 
-		// Set a 1s timer to wait for pending requests to complete
-		let intervalId = setInterval(function () {
-			if (pending_tasks <= 0) {
-				if (keystores.length <= 0) {
-					grunt.verbose.writeln("No KeyStores");
-				}
-				else {
-					grunt.log.ok('Processed ' + keystores.length + ' keystores');
-				}
-				grunt.verbose.writeln("================== import keystores DONE()");
-
-				clearInterval(intervalId);
-				done();
+		waitForCompletion(function () {
+			if (keystores.length <= 0) {
+				grunt.verbose.writeln("No KeyStores");
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.log.ok('Processed ' + keystores.length + ' keystores');
 			}
-		}, 1000);
+			grunt.verbose.writeln("================== import keystores DONE()");
+
+			done();
+		});
 	});
 
 	grunt.registerMultiTask('deleteKeyStores', 'Delete all keystores from org ' + apigee.to.org + ' environment ' + apigee.to.env + " [" + apigee.to.version + "]", function () {
@@ -217,20 +183,9 @@ module.exports = function (grunt) {
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
 		let keystores = this.filesSrc;
-		let pending_tasks = 0;
 		let done = this.async();
 
-		const waitForDelete = function (url, callback) {
-			let boundcb = callback.bind({ url: url });
-
-			++pending_tasks;
-			let r = request.del(url, function (error, response, body) {
-				boundcb(error, response, body);
-				--pending_tasks;
-			}).auth(userid, passwd, true);
-
-			return r;
-		}
+		const { waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= delete KeyStores ===========================");
 
@@ -268,23 +223,16 @@ module.exports = function (grunt) {
 			});
 		});
 
-		// Set a 1s timer to wait for pending requests to complete
-		let intervalId = setInterval(function () {
-			if (pending_tasks <= 0) {
-				if (keystores.length <= 0) {
-					grunt.verbose.writeln("No KeyStores");
-				}
-				else {
-					grunt.log.ok('Deleted ' + keystores.length + ' keystores');
-				}
-				grunt.verbose.writeln("================== delete keystores DONE()");
-
-				clearInterval(intervalId);
-				done();
+		waitForCompletion(function () {
+			if (keystores.length <= 0) {
+				grunt.verbose.writeln("No KeyStores");
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.log.ok('Deleted ' + keystores.length + ' keystores');
 			}
-		}, 1000);
+			grunt.verbose.writeln("================== delete keystores DONE()");
+
+			done();
+		});
 	});
 };

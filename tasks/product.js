@@ -2,8 +2,8 @@
 'use strict';
 
 const path = require('path');
-const request = require('request');
 const apigee = require('../config.js');
+const asyncrequest = require('../util/asyncrequest.lib.js');
 
 
 module.exports = function (grunt) {
@@ -14,25 +14,16 @@ module.exports = function (grunt) {
 		let passwd = apigee.from.passwd;
 		let filepath = grunt.config.get("exportProducts.dest.data");
 		let products;
-		let pending_tasks = 0;
 		let done = this.async();
 
-		const waitForRequest = function (url, callback) {
-			++pending_tasks;
-			let r = request(url, function (error, response, body) {
-				callback(error, response, body);
-				--pending_tasks;
-			}).auth(userid, passwd, true);
-
-			return r;
-		}
+		const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= export Products ===========================");
 
 		grunt.verbose.writeln("getting products..." + url);
 		url = url + "/v1/organizations/" + org + "/apiproducts";
 
-		waitForRequest(url, function (error, response, body) {
+		waitForGet(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				grunt.log.write("PRODUCTS: " + body);
 				products = JSON.parse(body);
@@ -52,7 +43,7 @@ module.exports = function (grunt) {
 						grunt.log.write("SKIPPING Product, URL too long: ");
 					} else {
 						// Retrieve product details
-						waitForRequest(product_url, function (error, response, body) {
+						waitForGet(product_url, function (error, response, body) {
 							if (!error && response.statusCode == 200) {
 								grunt.verbose.writeln("PRODUCT " + body);
 								let product_detail = JSON.parse(body);
@@ -81,25 +72,17 @@ module.exports = function (grunt) {
 			}
 		});
 
-
-		// Set a 1s timer to wait for pending requests to complete
-		let intervalId = setInterval(function () {
-			if (pending_tasks <= 0) {
-				if (products.length <= 0) {
-					grunt.verbose.writeln("No API Products");
-				}
-				else {
-					grunt.log.ok('Processed ' + products.length + ' API products');
-				}
-				grunt.verbose.writeln("================== export API Products DONE()");
-
-				clearInterval(intervalId);
-				done();
+		waitForCompletion(function () {
+			if (products.length <= 0) {
+				grunt.verbose.writeln("No API Products");
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.log.ok('Processed ' + products.length + ' API products');
 			}
-		}, 1000);
+			grunt.verbose.writeln("================== export API Products DONE()");
+
+			done();
+		});
 	});
 
 	grunt.registerMultiTask('importProducts', 'Import all products to org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
@@ -108,8 +91,9 @@ module.exports = function (grunt) {
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
 		let files = this.filesSrc;
-		let done_count = 0;
 		let done = this.async();
+
+		const { waitForPost, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		let f = grunt.option('src');
 		if (f) {
@@ -125,9 +109,8 @@ module.exports = function (grunt) {
 			let content = grunt.file.read(filepath);
 			let product_name = path.basename(filepath);
 
-			request.post({
+			waitForPost(url, {
 				headers: { 'content-type': 'application/json' },
-				url: url,
 				body: content
 			}, function (error, response, body) {
 				let status = 999;
@@ -142,8 +125,18 @@ module.exports = function (grunt) {
 					grunt.log.ok('Processed ' + done_count + ' products');
 					done();
 				}
-			}.bind({ url: url })).auth(userid, passwd, true);
+			});
+		});
 
+		waitForCompletion(function () {
+			if (files.length <= 0) {
+				grunt.verbose.writeln("No API Products");
+			}
+			else {
+				grunt.log.ok('Processed ' + files.length + ' API products');
+			}
+
+			done();
 		});
 	});
 
@@ -153,36 +146,47 @@ module.exports = function (grunt) {
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
 		let files = this.filesSrc;
-		let done_count = 0;
-		let opts = { flatten: false };
+		let done = this.async();
+
+		const { waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+
 		let f = grunt.option('src');
 		if (f) {
+			let opts = { flatten: false };
+
 			grunt.verbose.writeln('src pattern = ' + f);
 			files = grunt.file.expand(opts, f);
 		}
+
 		url = url + "/v1/organizations/" + org + "/apiproducts/";
-		let done = this.async();
+
 		files.forEach(function (filepath) {
 			let content = grunt.file.read(filepath);
 			let product = JSON.parse(content);
+
 			let del_url = url + product.name;
 			grunt.verbose.writeln(del_url);
-			request.del(del_url, function (error, response, body) {
+
+			waitForDelete(del_url, function (error, response, body) {
 				let status = 999;
 				if (response)
 					status = response.statusCode;
-				grunt.verbose.writeln('Resp [' + status + '] for product deletion ' + this.del_url + ' -> ' + body);
+				grunt.verbose.writeln('Resp [' + status + '] for product deletion ' + this.url + ' -> ' + body);
 				if (error || status != 200) {
-					grunt.verbose.error('ERROR Resp [' + status + '] for product deletion ' + this.del_url + ' -> ' + body);
+					grunt.verbose.error('ERROR Resp [' + status + '] for product deletion ' + this.url + ' -> ' + body);
 				}
-				done_count++;
-				if (done_count == files.length) {
-					grunt.log.ok('Processed ' + done_count + ' products');
-					done();
-				}
-			}.bind({ del_url: del_url })).auth(userid, passwd, true);
+			});
+		});
+		
+		waitForCompletion(function () {
+			if (files.length <= 0) {
+				grunt.verbose.writeln("No API Products");
+			}
+			else {
+				grunt.log.ok('Processed ' + files.length + ' API products');
+			}
 
+			done();
 		});
 	});
-
 };

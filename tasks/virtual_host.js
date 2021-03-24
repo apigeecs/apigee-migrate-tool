@@ -2,8 +2,8 @@
 'use strict';
 
 const path = require('path');
-const request = require('request');
 const apigee = require('../config.js');
+const asyncrequest = require('../util/asyncrequest.lib.js');
 
 
 module.exports = function (grunt) {
@@ -15,18 +15,9 @@ module.exports = function (grunt) {
 		let passwd = apigee.from.passwd;
 		let filepath = grunt.config.get("exportVirtualHosts.dest.data");
 		let vhosts = [];
-		let pending_tasks = 0;
 		let done = this.async();
 
-		const waitForRequest = function (url, callback) {
-			++pending_tasks;
-			let r = request(url, function (error, response, body) {
-				callback(error, response, body);
-				--pending_tasks;
-			}).auth(userid, passwd, true);
-
-			return r;
-		}
+		const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= export Virtual Hosts ===========================");
 
@@ -34,7 +25,7 @@ module.exports = function (grunt) {
 		grunt.verbose.writeln("getting virtual hosts..." + url);
 		url = url + "/v1/organizations/" + org + "/environments/" + env + "/virtualhosts";
 
-		waitForRequest(url, function (error, response, body) {
+		waitForGet(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				grunt.log.write("VIRTUALHOSTS: " + body);
 				vhosts = JSON.parse(body);
@@ -47,7 +38,7 @@ module.exports = function (grunt) {
 
 					// Get virtual host details
 					grunt.verbose.writeln("VIRTUAL HOST URL: " + vhost_url.length + " " + vhost_url);
-					waitForRequest(vhost_url, function (error, response, body) {
+					waitForGet(vhost_url, function (error, response, body) {
 						if (!error && response.statusCode == 200) {
 							grunt.verbose.writeln("VIRTUAL HOST " + body);
 							let vhost_detail = JSON.parse(body);
@@ -72,24 +63,17 @@ module.exports = function (grunt) {
 			}
 		});
 
-		// Set a 1s timer to wait for pending requests to complete
-		let intervalId = setInterval(function () {
-			if (pending_tasks <= 0) {
-				if (vhosts.length <= 0) {
-					grunt.verbose.writeln("No Virtual Hosts");
-				}
-				else {
-					grunt.log.ok('Processed ' + vhosts.length + ' virtual hosts');
-				}
-				grunt.verbose.writeln("================== export virtual hosts DONE()");
-
-				clearInterval(intervalId);
-				done();
+		waitForCompletion(function () {
+			if (vhosts.length <= 0) {
+				grunt.verbose.writeln("No Virtual Hosts");
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.log.ok('Processed ' + vhosts.length + ' virtual hosts');
 			}
-		}, 1000);
+			grunt.verbose.writeln("================== export virtual hosts DONE()");
+
+			done();
+		});
 	});
 
 	grunt.registerMultiTask('importVirtualHosts', 'Import all virtual hosts to org ' + apigee.to.org + ' environment ' + apigee.to.env + " [" + apigee.to.version + "]", function () {
@@ -99,20 +83,9 @@ module.exports = function (grunt) {
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
 		let vhosts = this.filesSrc;
-		let pending_tasks = 0;
 		let done = this.async();
 
-		const waitForPost = function (url, opts, callback) {
-			let boundcb = callback.bind({ url: url });
-
-			++pending_tasks;
-			let r = request.post({ url: url, ...opts }, function (error, response, body) {
-				boundcb(error, response, body);
-				--pending_tasks;
-			}).auth(userid, passwd, true);
-
-			return r;
-		}
+		const { waitForPost, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= import Virtual Hosts ===========================");
 
@@ -155,24 +128,17 @@ module.exports = function (grunt) {
 			});
 		});
 
-		// Set a 1s timer to wait for pending requests to complete
-		let intervalId = setInterval(function () {
-			if (pending_tasks <= 0) {
-				if (vhosts.length <= 0) {
-					grunt.verbose.writeln("No virtual hosts");
-				}
-				else {
-					grunt.log.ok('Processed ' + vhosts.length + ' virtual hosts');
-				}
-				grunt.verbose.writeln("================== import virtual hosts DONE()");
-
-				clearInterval(intervalId);
-				done();
+		waitForCompletion(function () {
+			if (vhosts.length <= 0) {
+				grunt.verbose.writeln("No virtual hosts");
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.log.ok('Processed ' + vhosts.length + ' virtual hosts');
 			}
-		}, 1000);
+			grunt.verbose.writeln("================== import virtual hosts DONE()");
+
+			done();
+		});
 	});
 
 	grunt.registerMultiTask('deleteVirtualHosts', 'Delete all virtual hosts from org ' + apigee.to.org + ' environment ' + apigee.to.env + " [" + apigee.to.version + "]", function () {
@@ -182,20 +148,9 @@ module.exports = function (grunt) {
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
 		let vhosts = this.filesSrc;
-		let pending_tasks = 0;
 		let done = this.async();
 
-		const waitForDelete = function (url, callback) {
-			let boundcb = callback.bind({ url: url });
-
-			++pending_tasks;
-			let r = request.del(url, function (error, response, body) {
-				boundcb(error, response, body);
-				--pending_tasks;
-			}).auth(userid, passwd, true);
-
-			return r;
-		}
+		const { waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= delete Virtual Hosts ===========================");
 
@@ -233,23 +188,16 @@ module.exports = function (grunt) {
 			});
 		});
 
-		// Set a 1s timer to wait for pending requests to complete
-		let intervalId = setInterval(function () {
-			if (pending_tasks <= 0) {
-				if (vhosts.length <= 0) {
-					grunt.verbose.writeln("No Virtual Hosts");
-				}
-				else {
-					grunt.log.ok('Deleted ' + vhosts.length + ' virtual hosts');
-				}
-				grunt.verbose.writeln("================== delete virtual hosts DONE()");
-
-				clearInterval(intervalId);
-				done();
+		waitForCompletion(function () {
+			if (vhosts.length <= 0) {
+				grunt.verbose.writeln("No Virtual Hosts");
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.log.ok('Deleted ' + vhosts.length + ' virtual hosts');
 			}
-		}, 1000);
+			grunt.verbose.writeln("================== delete virtual hosts DONE()");
+
+			done();
+		});
 	});
 };

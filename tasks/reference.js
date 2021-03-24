@@ -2,8 +2,8 @@
 'use strict';
 
 const path = require('path');
-const request = require('request');
 const apigee = require('../config.js');
+const asyncrequest = require('../util/asyncrequest.lib.js');
 
 
 module.exports = function (grunt) {
@@ -15,18 +15,9 @@ module.exports = function (grunt) {
 		let passwd = apigee.from.passwd;
 		let filepath = grunt.config.get("exportReferences.dest.data");
 		let refs = [];
-		let pending_tasks = 0;
 		let done = this.async();
 
-		const waitForRequest = function (url, callback) {
-			++pending_tasks;
-			let r = request(url, function (error, response, body) {
-				callback(error, response, body);
-				--pending_tasks;
-			}).auth(userid, passwd, true);
-
-			return r;
-		}
+		const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= export References ===========================");
 
@@ -34,7 +25,7 @@ module.exports = function (grunt) {
 		grunt.verbose.writeln("getting references..." + url);
 		url = url + "/v1/organizations/" + org + "/environments/" + env + "/references";
 
-		waitForRequest(url, function (error, response, body) {
+		waitForGet(url, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
 				grunt.log.write("REFERENCES: " + body);
 				refs = JSON.parse(body);
@@ -47,7 +38,7 @@ module.exports = function (grunt) {
 
 					// Get reference details
 					grunt.verbose.writeln("REFERENCE URL: " + ref_url.length + " " + ref_url);
-					waitForRequest(ref_url, function (error, response, body) {
+					waitForGet(ref_url, function (error, response, body) {
 						if (!error && response.statusCode == 200) {
 							grunt.verbose.writeln("REFERENCE " + body);
 							let ref_detail = JSON.parse(body);
@@ -72,24 +63,17 @@ module.exports = function (grunt) {
 			}
 		});
 
-		// Set a 1s timer to wait for pending requests to complete
-		let intervalId = setInterval(function () {
-			if (pending_tasks <= 0) {
-				if (refs.length <= 0) {
-					grunt.verbose.writeln("No References");
-				}
-				else {
-					grunt.log.ok('Processed ' + refs.length + ' references');
-				}
-				grunt.verbose.writeln("================== export references DONE()");
-
-				clearInterval(intervalId);
-				done();
+		waitForCompletion(function () {
+			if (refs.length <= 0) {
+				grunt.verbose.writeln("No References");
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.log.ok('Processed ' + refs.length + ' references');
 			}
-		}, 1000);
+			grunt.verbose.writeln("================== export references DONE()");
+
+			done();
+		});
 	});
 
 	grunt.registerMultiTask('importReferences', 'Import all references to org ' + apigee.to.org + ' environment ' + apigee.to.env + " [" + apigee.to.version + "]", function () {
@@ -99,20 +83,9 @@ module.exports = function (grunt) {
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
 		let refs = this.filesSrc;
-		let pending_tasks = 0;
 		let done = this.async();
 
-		const waitForPost = function (url, opts, callback) {
-			let boundcb = callback.bind({ url: url });
-
-			++pending_tasks;
-			let r = request.post({ url: url, ...opts }, function (error, response, body) {
-				boundcb(error, response, body);
-				--pending_tasks;
-			}).auth(userid, passwd, true);
-
-			return r;
-		}
+		const { waitForPost, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= import References ===========================");
 
@@ -155,24 +128,17 @@ module.exports = function (grunt) {
 			});
 		});
 
-		// Set a 1s timer to wait for pending requests to complete
-		let intervalId = setInterval(function () {
-			if (pending_tasks <= 0) {
-				if (refs.length <= 0) {
-					grunt.verbose.writeln("No References");
-				}
-				else {
-					grunt.log.ok('Processed ' + refs.length + ' references');
-				}
-				grunt.verbose.writeln("================== import references DONE()");
-
-				clearInterval(intervalId);
-				done();
+		waitForCompletion(function () {
+			if (refs.length <= 0) {
+				grunt.verbose.writeln("No References");
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.log.ok('Processed ' + refs.length + ' references');
 			}
-		}, 1000);
+			grunt.verbose.writeln("================== import references DONE()");
+
+			done();
+		});
 	});
 
 	grunt.registerMultiTask('deleteReferences', 'Delete all references from org ' + apigee.to.org + ' environment ' + apigee.to.env + " [" + apigee.to.version + "]", function () {
@@ -182,20 +148,9 @@ module.exports = function (grunt) {
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
 		let refs = this.filesSrc;
-		let pending_tasks = 0;
 		let done = this.async();
 
-		const waitForDelete = function (url, callback) {
-			let boundcb = callback.bind({ url: url });
-
-			++pending_tasks;
-			let r = request.del(url, function (error, response, body) {
-				boundcb(error, response, body);
-				--pending_tasks;
-			}).auth(userid, passwd, true);
-
-			return r;
-		}
+		const { waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= delete References ===========================");
 
@@ -233,23 +188,16 @@ module.exports = function (grunt) {
 			});
 		});
 
-		// Set a 1s timer to wait for pending requests to complete
-		let intervalId = setInterval(function () {
-			if (pending_tasks <= 0) {
-				if (refs.length <= 0) {
-					grunt.verbose.writeln("No References");
-				}
-				else {
-					grunt.log.ok('Deleted ' + refs.length + ' references');
-				}
-				grunt.verbose.writeln("================== delete references DONE()");
-
-				clearInterval(intervalId);
-				done();
+		waitForCompletion(function () {
+			if (refs.length <= 0) {
+				grunt.verbose.writeln("No References");
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.log.ok('Deleted ' + refs.length + ' references');
 			}
-		}, 1000);
+			grunt.verbose.writeln("================== delete references DONE()");
+
+			done();
+		});
 	});
 };
