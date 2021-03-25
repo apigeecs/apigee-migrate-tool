@@ -91,7 +91,7 @@ module.exports = function (grunt) {
 			waitForGet(company_url, function (company_error, company_response, company_body) {
 				if (!company_error && company_response.statusCode == 200) {
 					++company_count;
-					
+
 					let company_detail = JSON.parse(company_body);
 					let company_folder = path.join(filepath, "companies", company_detail.name);
 					grunt.file.mkdir(company_folder);
@@ -164,7 +164,11 @@ module.exports = function (grunt) {
 		let org = apigee.to.org;
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
-		let files;
+		let files = this.filesSrc;
+		let app_count = 0;
+		let app_err_count = 0;
+		let status_err_count = 0;
+		let key_err_count = 0;
 		let done = this.async();
 
 		const { waitForPost, waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
@@ -177,8 +181,6 @@ module.exports = function (grunt) {
 
 			grunt.verbose.writeln('src pattern = ' + f);
 			files = grunt.file.expand(opts, f);
-		} else {
-			files = this.filesSrc;
 		}
 
 		const developers_url = url + "/v1/organizations/" + org + "/developers";
@@ -188,16 +190,15 @@ module.exports = function (grunt) {
 			let folders = filepath.split("/");
 			let apptype = folders[folders.length - 3];
 			let owner = folders[folders.length - 2];
-			let app_count = 0;
 			let app_url;
 
 			switch (apptype) {
 				case "developers":
-					app_url = developers_url + "/" + owner + "/apps";
+					app_url = developers_url + "/" + encodeURIComponent(owner) + "/apps";
 					break;
 
 				case "companies":
-					app_url = companies_url + "/" + owner + "/apps";
+					app_url = companies_url + "/" + encodeURIComponent(owner) + "/apps";
 					break;
 
 				default:
@@ -216,7 +217,6 @@ module.exports = function (grunt) {
 			delete app['lastModifiedBy'];
 			delete app['createdAt'];
 			delete app['createdBy'];
-			//delete app['status'];
 			delete app['appFamily'];
 			delete app['accessType'];
 			delete app['credentials'];
@@ -235,14 +235,15 @@ module.exports = function (grunt) {
 						let cstatus = 999;
 						if (response)
 							cstatus = response.statusCode;
-						if (cstatus == 200 || cstatus == 201) {
+
+						if (!error && (cstatus == 200 || cstatus == 201)) {
 							++app_count;
 							grunt.verbose.writeln('Resp [' + response.statusCode + '] for create app  ' + this.url + ' -> ' + body);
 							let app_resp = JSON.parse(body);
 
 							// Set app status
 							if (app['status'] && (app_resp['status'] != app['status'])) {
-								let status_url = app_url + '/' + app.name + '?action=';
+								let status_url = app_url + '/' + encodeURIComponent(app.name) + '?action=';
 								if (app['status'] == 'approved')
 									status_url += "approve";
 								else
@@ -258,6 +259,7 @@ module.exports = function (grunt) {
 										grunt.verbose.writeln('Resp [' + status + '] for app status ' + this.owner + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
 									}
 									else {
+										++status_err_count;
 										grunt.log.error('ERROR Resp [' + status + '] for ' + this.owner + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
 
 										if (error) {
@@ -268,8 +270,8 @@ module.exports = function (grunt) {
 							}
 
 							// Delete the key generated when App is created
-							let client_key = app_resp.credentials[0].consumerKey;
-							let delete_url = app_url + '/' + app.name + '/keys/' + client_key;
+							const client_key = app_resp.credentials[0].consumerKey;
+							const delete_url = app_url + '/' + encodeURIComponent(app.name) + '/keys/' + client_key;
 
 							waitForDelete(delete_url, function (error, response, body) {
 								let status = 999;
@@ -280,17 +282,30 @@ module.exports = function (grunt) {
 									grunt.verbose.writeln('Resp [' + status + '] for key delete ' + this.url + ' -> ' + body);
 								}
 								else {
+									++key_err_count;
 									grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.url + ' -> ' + body);
+
+									if (error) {
+										grunt.log.error(error);
+									}
 								}
-							}).auth(userid, passwd, true);
+							});
 						}
 						else {
-							grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create app  ' + this.app_url + ' -> ' + body);
-							callback();
+							++app_err_count;
+
+							if (error) {
+								grunt.log.error(error);
+							}
+							if (response) {
+								grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create app  ' + this.url + ' -> ' + body);
+							}
 						}
 					} catch (err) {
 						grunt.log.error("ERROR - from App URL : " + app_url);
-						grunt.log.error(body);
+						if (body) {
+							grunt.log.error(body);
+						}
 						grunt.log.error(err);
 					}
 				}
@@ -298,11 +313,20 @@ module.exports = function (grunt) {
 		});
 
 		waitForCompletion(function () {
-			if (total_apps <= 0) {
+			if (app_count <= 0) {
 				grunt.verbose.writeln("No Apps");
 			}
 			else {
 				grunt.log.ok('Imported ' + app_count + ' apps');
+			}
+			if (app_err_count) {
+				grunt.log.error('Failed to create ' + app_err_count + ' apps');
+			}
+			if (status_err_count) {
+				grunt.log.error('Failed to set status for ' + status_err_count + ' apps');
+			}
+			if (key_err_count) {
+				grunt.log.error('Failed to delete default key for ' + key_err_count + ' apps');
 			}
 
 			done();
@@ -317,6 +341,7 @@ module.exports = function (grunt) {
 		let passwd = apigee.to.passwd;
 		let files;
 		let del_count = 0;
+		let del_err_count = 0;
 		let done = this.async();
 
 		const { waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
@@ -344,11 +369,11 @@ module.exports = function (grunt) {
 
 			switch (apptype) {
 				case 'developers':
-					app_del_url = developers_url + "/" + owner + "/apps/" + folders[folders.length - 1];
+					app_del_url = developers_url + "/" + encodeURIComponent(owner) + "/apps/" + encodeURIComponent(folders[folders.length - 1]);
 					break;
 
 				case 'companies':
-					app_del_url = companies_url + "/" + owner + "/apps/" + folders[folders.length - 1];
+					app_del_url = companies_url + "/" + encodeURIComponent(owner) + "/apps/" + encodeURIComponent(folders[folders.length - 1]);
 					break;
 
 				default:
@@ -370,6 +395,7 @@ module.exports = function (grunt) {
 				}
 				else {
 					grunt.log.error('ERROR Resp [' + status + '] for delete app ' + this.url + ' -> ' + body);
+					++del_err_count;
 				}
 			});
 		});
@@ -380,6 +406,9 @@ module.exports = function (grunt) {
 			}
 			else {
 				grunt.log.ok('Deleted ' + del_count + ' apps');
+			}
+			if (del_err_count) {
+				grunt.log.error('Failed to delete ' + del_err_count + ' apps');
 			}
 
 			done();
