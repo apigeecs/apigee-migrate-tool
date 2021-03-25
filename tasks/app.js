@@ -4,7 +4,7 @@
 const path = require('path');
 const apigee = require('../config.js');
 const asyncrequest = require('../util/asyncrequest.lib.js');
-
+const iterators = require('../util/iterators.lib.js');
 
 module.exports = function (grunt) {
 	grunt.registerTask('exportApps', 'Export all apps from org ' + apigee.from.org + " [" + apigee.from.version + "]", function () {
@@ -18,6 +18,7 @@ module.exports = function (grunt) {
 		let total_apps = 0;
 		let done = this.async();
 
+		const { iterateOverDevs, iterateOverCompanies } = iterators(grunt, apigee);
 		const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= export Apps ===========================");
@@ -31,6 +32,8 @@ module.exports = function (grunt) {
 			// Retrieve developer details
 			waitForGet(dev_url, function (dev_error, dev_response, dev_body) {
 				if (!dev_error && dev_response.statusCode == 200) {
+					++dev_count;
+
 					let dev_detail = JSON.parse(dev_body);
 					let dev_folder = path.join(filepath, "developers", dev_detail.email);
 					grunt.file.mkdir(dev_folder);
@@ -81,65 +84,14 @@ module.exports = function (grunt) {
 			// End Developer details
 		}
 
-		const iterateOverDevs = function (start, base_url, callback) {
-			let url = base_url;
-
-			if (start) {
-				url += "?startKey=" + encodeURIComponent(start);
-			}
-
-			grunt.verbose.writeln("getting developers: " + url);
-			waitForGet(url, function (error, response, body) {
-				if (!error && response.statusCode == 200) {
-					let devs = JSON.parse(body);
-					let last = null;
-
-					// detect none and we're done
-					if (devs.length == 0) {
-						grunt.log.ok('No developers found');
-						return;
-						// detect the only developer returned is the one we asked to start with; that's the end game, but wait.
-					} else if ((devs.length == 1) && (devs[0] == start)) {
-						grunt.log.ok('Retrieved TOTAL of ' + dev_count + ' developers, waiting for callbacks to complete');
-					} else {
-						dev_count += devs.length;
-						if (start)
-							dev_count--;
-
-						for (let i = 0; i < devs.length; i++) {
-							// If there was a 'start', don't do it again, because it was processed in the previous callback.
-							if (start && devs[i] == start) {
-								continue;
-							}
-
-							if (callback) {
-								callback(devs[i]);
-							}
-
-							last = devs[i];
-						}
-
-						grunt.log.ok('Retrieved ' + devs.length + ' developers');
-
-						// Keep on calling getDevs() as long as we're getting new developers back
-						iterateOverDevs(last, base_url, callback);
-					}
-				}
-				else {
-					if (error)
-						grunt.log.error(error);
-					else
-						grunt.log.error(body);
-				}
-			});
-		}
-
 		const dumpCompanyApps = function (company) {
 			let company_url = companies_url + '/' + encodeURIComponent(company);
 
 			// Retrieve company details
 			waitForGet(company_url, function (company_error, company_response, company_body) {
 				if (!company_error && company_response.statusCode == 200) {
+					++company_count;
+					
 					let company_detail = JSON.parse(company_body);
 					let company_folder = path.join(filepath, "companies", company_detail.name);
 					grunt.file.mkdir(company_folder);
@@ -190,62 +142,9 @@ module.exports = function (grunt) {
 			});
 		}
 
-		const iterateOverCompanies = function (start, base_url, callback) {
-			let url = base_url;
+		iterateOverDevs(dumpDeveloperApps);
 
-			if (start) {
-				url += "?startKey=" + encodeURIComponent(start);
-			}
-
-			grunt.verbose.writeln("getting companies: " + url);
-			waitForGet(url, function (error, response, body) {
-				if (!error && response.statusCode == 200) {
-					let companies = JSON.parse(body);
-					let last = null;
-
-					// detect none and we're done
-					if (companies.length == 0) {
-						grunt.log.ok('No companies found');
-						return;
-						// if the only company returned is the one we asked to start with; that's the end game, but wait.
-					} else if ((companies.length == 1) && (companies[0] == start)) {
-						grunt.log.ok('Retrieved TOTAL of ' + company_count + ' companies, waiting for callbacks to complete');
-					} else {
-						company_count += companies.length;
-						if (start)
-							company_count--;
-
-						for (let i = 0; i < companies.length; i++) {
-							// If there was a 'start', don't do it again, because it was processed in the previous callback.
-							if (start && companies[i] == start) {
-								continue;
-							}
-
-							if (callback) {
-								callback(companies[i]);
-							}
-
-							last = companies[i];
-						}
-
-						grunt.log.ok('Retrieved ' + companies.length + ' companies');
-
-						// Keep on calling getCompanies() as long as we're getting new companies back
-						iterateOverCompanies(last, base_url, callback);
-					}
-				}
-				else {
-					if (error)
-						grunt.log.error(error);
-					else
-						grunt.log.error(body);
-				}
-			});
-		}
-
-		iterateOverDevs(null, developers_url, dumpDeveloperApps);
-
-		iterateOverCompanies(null, companies_url, dumpCompanyApps);
+		iterateOverCompanies(dumpCompanyApps);
 
 		waitForCompletion(function () {
 			if (total_apps <= 0) {

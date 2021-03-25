@@ -39,10 +39,13 @@ module.exports = function (grunt, userid, passwd) {
 		return r;
 	}
 
-	const waitForCompletion = function (donecb) {
+	const waitForCompletion = function (donecb = null) {
 		let intervalId = setInterval(function () {
 			if (pending_tasks <= 0) {
-				donecb();
+				if (donecb) {
+					donecb();
+				}
+	
 				clearInterval(intervalId);
 			}
 			else {
