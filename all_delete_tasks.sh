@@ -2,6 +2,7 @@
 grunt deleteKeys -v
 grunt deleteApps -v
 grunt deleteDevs -v
+grunt deleteCompanies -v
 grunt deleteProducts -v
 grunt deleteProxies -v
 grunt deleteEnvKVM -v

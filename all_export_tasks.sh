@@ -1,5 +1,6 @@
 #!/bin/bash
 grunt exportDevs -v
+grunt exportCompanies -v
 grunt exportProducts -v
 grunt exportApps -v
 grunt exportProxies -v

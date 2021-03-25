@@ -1,39 +1,48 @@
+deleteAllSpecs
 deleteApps
+deleteCompanies
 deleteDevs
 deleteEnvKVM
 deleteFlowHooks
+deleteKeyStores
 deleteKeys
 deleteOrgKVM
 deleteProducts
 deleteProxies
 deleteProxyKVM
+deleteReferences
 deleteReports
 deleteSharedFlows
 deleteTargetServers
-deleteKeyStores
+deleteVirtualHosts
 
 deployProxies to org
 deploySharedFlows to org
 
+exportAllSpecs
 exportApps
+exportCompanies
 exportDevs
 exportEnvKVM
 exportFlowHooks
-exportTargetServers
+exportKeyStores
 exportOrgKVM
 exportProducts
 exportProxies
 exportProxyKVM
+exportReferences
 exportReports
 exportSharedFlows
-exportKeyStores
+exportTargetServers
+exportVirtualHosts
 
-importKeyStores
-importTargetServers
+importAllSpecs
 importApps
+importCompanies
 importDevs
 importEnvKVM
 importFlowHooks
+importKeyStores
 importKeys
 importOrgKVM
 importProducts
@@ -41,6 +50,8 @@ importProxies
 importProxyKVM
 importReports
 importSharedFlows
+importTargetServers
+importVirtualHosts
 
 readCSVApps
 readCSVDevs

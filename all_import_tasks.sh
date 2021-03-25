@@ -6,6 +6,7 @@ grunt importVirtualHosts -v
 grunt importProxies -v
 grunt importSharedFlows -v
 grunt importDevs -v
+grunt importCompanies -v
 grunt importProducts -v
 grunt importApps -v
 grunt importKeys -v

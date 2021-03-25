@@ -14,7 +14,10 @@ module.exports = function(grunt) {
     exportDevs: {
        dest: './data/devs'
     },
-    exportProducts: {
+    exportCompanies: {
+        dest: './data/companies'
+     },
+     exportProducts: {
        dest: './data/products'
     },
     exportApps: {
@@ -71,6 +74,9 @@ module.exports = function(grunt) {
     importDevs: {
         src: 'data/devs/*'
     },
+    importCompanies: {
+        src: 'data/companies/*'
+    },
     importApps: {
         src: 'data/apps/*/*/*'
     },
@@ -115,6 +121,9 @@ module.exports = function(grunt) {
     },
     deleteDevs: {
         src: './data/devs/*'
+    },
+    deleteCompanies: {
+        src: './data/companies/*'
     },
     deleteProxies: {
         src: './data/proxies/*'
@@ -163,9 +172,9 @@ module.exports = function(grunt) {
   grunt.loadTasks('tasks');
 
   grunt.registerTask('default', ['availabletasks']);
-  grunt.registerTask('deleteAll', ['warn', 'deleteApps', 'deleteDevs', 'deleteProducts', 'deleteProxies', 'deleteFlowHooks', 'deleteSharedFlows', 'deleteTargetServers', 'deleteVirtualHosts', 'deleteEnvKVM', 'deleteOrgKVM', 'deleteProxyKVM', 'deleteKeys', 'deleteReports', 'deleteReferences', 'deleteKeyStores']);
-  grunt.registerTask('exportAll', ['exportProxies', 'exportProducts', 'exportDevs', 'exportSharedFlows','exportApps', 'exportFlowHooks', 'exportTargetServers', 'exportOrgKVM','exportEnvKVM','exportProxyKVM', 'exportReports', 'exportKeyStores', 'exportReferences', 'exportVirtualHosts']);
-  grunt.registerTask('importAll', ['importKeyStores', 'importReferences', 'importTargetServers', 'importVirtualHosts', 'importProxies', 'importProducts', 'importDevs', 'importApps', 'importSharedFlows','importFlowHooks', 'importOrgKVM', 'importEnvKVM', 'importProxyKVM', 'importKeys', 'importReports']);
+  grunt.registerTask('deleteAll', ['warn', 'deleteApps', 'deleteDevs', 'deleteCompanies', 'deleteProducts', 'deleteProxies', 'deleteFlowHooks', 'deleteSharedFlows', 'deleteTargetServers', 'deleteVirtualHosts', 'deleteEnvKVM', 'deleteOrgKVM', 'deleteProxyKVM', 'deleteKeys', 'deleteReports', 'deleteReferences', 'deleteKeyStores']);
+  grunt.registerTask('exportAll', ['exportProxies', 'exportProducts', 'exportDevs', 'exportCompanies', 'exportSharedFlows','exportApps', 'exportFlowHooks', 'exportTargetServers', 'exportOrgKVM','exportEnvKVM','exportProxyKVM', 'exportReports', 'exportKeyStores', 'exportReferences', 'exportVirtualHosts']);
+  grunt.registerTask('importAll', ['importKeyStores', 'importReferences', 'importTargetServers', 'importVirtualHosts', 'importProxies', 'importProducts', 'importDevs', 'importCompanies', 'importApps', 'importSharedFlows','importFlowHooks', 'importOrgKVM', 'importEnvKVM', 'importProxyKVM', 'importKeys', 'importReports']);
   grunt.registerTask('tasks', ['availabletasks']);
   grunt.registerTask('warn', 'Display Warning', function() {
       var readline = require('readline');
