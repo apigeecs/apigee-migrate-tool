@@ -2,7 +2,6 @@
 'use strict';
 
 const path = require('path');
-const request = require('request');
 const apigee = require('../config.js');
 const asyncrequest = require('../util/asyncrequest.lib.js');
 const iterators = require('../util/iterators.lib.js');
@@ -22,14 +21,13 @@ module.exports = function (grunt) {
 
 		grunt.verbose.writeln("========================= export Devs ===========================");
 
-		grunt.verbose.writeln("getting developers... " + url);
 		const developers_url = url + "/v1/organizations/" + org + "/developers";
 
 		const dumpDeveloper = function (email) {
 			const dev_url = developers_url + "/" + encodeURIComponent(email);
-			grunt.verbose.writeln("getting developer " + dev_url);
+			grunt.verbose.writeln("getting developer: " + dev_url);
 
-			//Call developer details
+			// Retrieve developer details
 			waitForGet(dev_url, function (dev_error, dev_response, dev_body) {
 				if (!dev_error && dev_response.statusCode == 200) {
 					++dev_count;
@@ -42,7 +40,7 @@ module.exports = function (grunt) {
 					grunt.verbose.writeln('Dev ' + dev_detail.email + ' written!');
 				}
 				else {
-					if (error)
+					if (dev_error)
 						grunt.log.error(dev_error);
 					else
 						grunt.log.error(dev_body);
@@ -72,7 +70,7 @@ module.exports = function (grunt) {
 		let org = apigee.to.org;
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
-		let files;
+		let files = this.filesSrc;
 		let dev_count = 0;
 		let done = this.async();
 
@@ -84,9 +82,6 @@ module.exports = function (grunt) {
 
 			grunt.verbose.writeln('src pattern = ' + f);
 			files = grunt.file.expand(opts, f);
-		}
-		else {
-			files = this.filesSrc;
 		}
 
 		const developers_url = url + "/v1/organizations/" + org + "/developers";
