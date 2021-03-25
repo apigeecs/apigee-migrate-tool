@@ -14,25 +14,25 @@ module.exports = function (grunt) {
 		let passwd = apigee.from.passwd;
 		let filepath = grunt.config.get("exportApps.dest.data");
 		let dev_count = 0;
+		let company_count = 0;
 		let total_apps = 0;
 		let done = this.async();
 
 		const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		grunt.verbose.writeln("========================= export Apps ===========================");
-		grunt.verbose.writeln("getting developers..." + url);
 
 		const developers_url = url + "/v1/organizations/" + org + "/developers";
+		const companies_url = url + "/v1/organizations/" + org + "/companies";
 
-		const dumpApps = function (email) {
-			let dev_url = developers_url + "/" + email;
+		const dumpDeveloperApps = function (email) {
+			let dev_url = developers_url + "/" + encodeURIComponent(email);
 
 			// Retrieve developer details
 			waitForGet(dev_url, function (dev_error, dev_response, dev_body) {
 				if (!dev_error && dev_response.statusCode == 200) {
-					// grunt.verbose.write("Dev body = " + dev_body);
 					let dev_detail = JSON.parse(dev_body);
-					let dev_folder = filepath + "/" + dev_detail.email;
+					let dev_folder = path.join(filepath, "developers", dev_detail.email);
 					grunt.file.mkdir(dev_folder);
 
 					//Get developer Apps
@@ -41,8 +41,6 @@ module.exports = function (grunt) {
 
 					waitForGet(apps_url, function (app_error, app_response, app_body) {
 						if (!app_error && app_response.statusCode == 200) {
-							grunt.verbose.writeln(app_body);
-
 							let apps_detail = JSON.parse(app_body);
 							let apps = apps_detail.app;
 
@@ -65,7 +63,7 @@ module.exports = function (grunt) {
 							}
 						}
 						else {
-							grunt.log.error('Error retrieving apps for ' + dev_detail.email);
+							grunt.log.error('Error retrieving apps for developer ' + dev_detail.email);
 
 							if (error) {
 								grunt.log.error(error);
@@ -112,9 +110,12 @@ module.exports = function (grunt) {
 							// If there was a 'start', don't do it again, because it was processed in the previous callback.
 							if (start && devs[i] == start) {
 								continue;
-
 							}
-							callback(devs[i]);
+
+							if (callback) {
+								callback(devs[i]);
+							}
+
 							last = devs[i];
 						}
 
@@ -130,18 +131,128 @@ module.exports = function (grunt) {
 					else
 						grunt.log.error(body);
 				}
-
 			});
 		}
 
-		iterateOverDevs(null, developers_url, dumpApps);
+		const dumpCompanyApps = function (company) {
+			let company_url = companies_url + '/' + encodeURIComponent(company);
+
+			// Retrieve company details
+			waitForGet(company_url, function (company_error, company_response, company_body) {
+				if (!company_error && company_response.statusCode == 200) {
+					let company_detail = JSON.parse(company_body);
+					let company_folder = path.join(filepath, "companies", company_detail.name);
+					grunt.file.mkdir(company_folder);
+
+					//Get company Apps
+					let apps_url = companies_url + "/" + encodeURIComponent(company_detail.name) + "/apps?expand=true";
+					grunt.verbose.writeln(apps_url);
+
+					waitForGet(apps_url, function (app_error, app_response, app_body) {
+						if (!app_error && app_response.statusCode == 200) {
+							let apps_detail = JSON.parse(app_body);
+							let apps = apps_detail.app;
+
+							if (apps) {
+								for (let j = 0; j < apps.length; j++) {
+									let app = apps[j];
+									let file_name = path.join(company_folder, app.name);
+
+									grunt.file.write(file_name, JSON.stringify(app));
+									grunt.verbose.writeln('App ' + company_detail.name + ' / ' + app.name + ' written!');
+								};
+							}
+							total_apps += apps.length;
+
+							if (apps.length > 0) {
+								grunt.log.ok('Retrieved ' + apps.length + ' apps for ' + company_detail.name);
+							}
+							else {
+								grunt.verbose.writeln('Retrieved ' + apps.length + ' apps for ' + company_detail.name);
+							}
+
+						}
+						else {
+							grunt.log.error('Error retrieving apps for company ' + company_detail.name);
+
+							if (error) {
+								grunt.log.error(error);
+							}
+						}
+					});
+				}
+				else {
+					if (company_error)
+						grunt.log.error(company_error);
+					else
+						grunt.log.error(company_body);
+				}
+			});
+		}
+
+		const iterateOverCompanies = function (start, base_url, callback) {
+			let url = base_url;
+
+			if (start) {
+				url += "?startKey=" + encodeURIComponent(start);
+			}
+
+			grunt.verbose.writeln("getting companies: " + url);
+			waitForGet(url, function (error, response, body) {
+				if (!error && response.statusCode == 200) {
+					let companies = JSON.parse(body);
+					let last = null;
+
+					// detect none and we're done
+					if (companies.length == 0) {
+						grunt.log.ok('No companies found');
+						return;
+						// if the only company returned is the one we asked to start with; that's the end game, but wait.
+					} else if ((companies.length == 1) && (companies[0] == start)) {
+						grunt.log.ok('Retrieved TOTAL of ' + company_count + ' companies, waiting for callbacks to complete');
+					} else {
+						company_count += companies.length;
+						if (start)
+							company_count--;
+
+						for (let i = 0; i < companies.length; i++) {
+							// If there was a 'start', don't do it again, because it was processed in the previous callback.
+							if (start && companies[i] == start) {
+								continue;
+							}
+
+							if (callback) {
+								callback(companies[i]);
+							}
+
+							last = companies[i];
+						}
+
+						grunt.log.ok('Retrieved ' + companies.length + ' companies');
+
+						// Keep on calling getCompanies() as long as we're getting new companies back
+						iterateOverCompanies(last, base_url, callback);
+					}
+				}
+				else {
+					if (error)
+						grunt.log.error(error);
+					else
+						grunt.log.error(body);
+				}
+			});
+		}
+
+		iterateOverDevs(null, developers_url, dumpDeveloperApps);
+
+		iterateOverCompanies(null, companies_url, dumpCompanyApps);
 
 		waitForCompletion(function () {
 			if (total_apps <= 0) {
 				grunt.verbose.writeln("No Apps");
 			}
 			else {
-				grunt.log.ok('Exported ' + total_apps + ' apps for ' + dev_count + ' developers');
+				grunt.log.ok('Exported ' + total_apps + ' apps for ' + dev_count + ' developers and ' + company_count + ' companies');
 			}
 			grunt.verbose.writeln("================== export apps DONE()");
 
@@ -171,16 +282,33 @@ module.exports = function (grunt) {
 			files = this.filesSrc;
 		}
 
-		url = url + "/v1/organizations/" + org + "/developers/";
+		const developers_url = url + "/v1/organizations/" + org + "/developers";
+		const companies_url = url + "/v1/organizations/" + org + "/companies";
 
 		files.forEach(function (filepath) {
 			let folders = filepath.split("/");
-			let dev = folders[folders.length - 2];
-			let content = grunt.file.read(filepath);
+			let apptype = folders[folders.length - 3];
+			let owner = folders[folders.length - 2];
+			let app_count = 0;
+			let app_url;
 
+			switch (apptype) {
+				case "developers":
+					app_url = developers_url + "/" + owner + "/apps";
+					break;
+
+				case "companies":
+					app_url = companies_url + "/" + owner + "/apps";
+					break;
+
+				default:
+					return;
+			}
+
+			let content = grunt.file.read(filepath);
 			let app = JSON.parse(content);
 
-			grunt.verbose.writeln("Creating app : " + app.name + " under developer " + dev);
+			grunt.verbose.writeln("Creating app : " + app.name + " under developer " + owner);
 
 			delete app['appId'];
 			//delete app['status'];
@@ -194,7 +322,6 @@ module.exports = function (grunt) {
 			delete app['accessType'];
 			delete app['credentials'];
 
-			let app_url = url + dev + "/apps";
 			grunt.verbose.writeln("Creating App " + app_url);
 			grunt.verbose.writeln(JSON.stringify(app));
 
@@ -210,6 +337,7 @@ module.exports = function (grunt) {
 						if (response)
 							cstatus = response.statusCode;
 						if (cstatus == 200 || cstatus == 201) {
+							++app_count;
 							grunt.verbose.writeln('Resp [' + response.statusCode + '] for create app  ' + this.url + ' -> ' + body);
 							let app_resp = JSON.parse(body);
 
@@ -228,16 +356,16 @@ module.exports = function (grunt) {
 									}
 
 									if (!error && status == 204) {
-										grunt.verbose.writeln('Resp [' + status + '] for app status ' + this.dev + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
+										grunt.verbose.writeln('Resp [' + status + '] for app status ' + this.owner + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
 									}
 									else {
-										grunt.log.error('ERROR Resp [' + status + '] for ' + this.dev + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
+										grunt.log.error('ERROR Resp [' + status + '] for ' + this.owner + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
 
 										if (error) {
 											grunt.log.error(error);
 										}
 									}
-								}.bind({ dev: dev, app_name: app.name }));
+								}.bind({ owner: owner, app_name: app.name }));
 							}
 
 							// Delete the key generated when App is created
@@ -275,7 +403,7 @@ module.exports = function (grunt) {
 				grunt.verbose.writeln("No Apps");
 			}
 			else {
-				grunt.log.ok('Imported ' + files.length + ' apps');
+				grunt.log.ok('Imported ' + app_count + ' apps');
 			}
 
 			done();
@@ -289,6 +417,7 @@ module.exports = function (grunt) {
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
 		let files;
+		let del_count = 0;
 		let done = this.async();
 
 		const { waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
@@ -304,18 +433,33 @@ module.exports = function (grunt) {
 			files = this.filesSrc;
 		}
 
-		url = url + "/v1/organizations/" + org + "/developers/";
+		const developers_url = url + "/v1/organizations/" + org + "/developers";
+		const companies_url = url + "/v1/organizations/" + org + "/companies";
 
 		files.forEach(function (filepath) {
 			grunt.verbose.writeln("processing file " + filepath);
 			let folders = filepath.split("/");
-			let dev = folders[folders.length - 2];
+			let apptype = folders[folders.length - 3];
+			let owner = folders[folders.length - 2];
+			let app_del_url;
+
+			switch (apptype) {
+				case 'developers':
+					app_del_url = developers_url + "/" + owner + "/apps/" + folders[folders.length - 1];
+					break;
+
+				case 'companies':
+					app_del_url = companies_url + "/" + owner + "/apps/" + folders[folders.length - 1];
+					break;
+
+				default:
+					return;
+			}
+
 			let content = grunt.file.read(filepath);
 			let app = JSON.parse(content);
 
-			let app_del_url = url + dev + "/apps/" + app.name;
-			grunt.verbose.writeln(app_del_url);
-
+			grunt.verbose.writeln('Deleting app: ' + app_del_url);
 			waitForDelete(app_del_url, function (error, response, body) {
 				let status = 999;
 				if (response)
@@ -323,6 +467,7 @@ module.exports = function (grunt) {
 
 				if (!error && status == 200) {
 					grunt.verbose.writeln('Resp [' + status + '] for delete app ' + this.url + ' -> ' + body);
+					++del_count;
 				}
 				else {
 					grunt.log.error('ERROR Resp [' + status + '] for delete app ' + this.url + ' -> ' + body);
@@ -335,22 +480,10 @@ module.exports = function (grunt) {
 				grunt.verbose.writeln("No Apps");
 			}
 			else {
-				grunt.log.ok('Deleted ' + done_count + ' apps');
+				grunt.log.ok('Deleted ' + del_count + ' apps');
 			}
 
 			done();
 		});
 	});
-};
-
-
-Array.prototype.unique = function () {
-	let a = this.concat();
-	for (let i = 0; i < a.length; ++i) {
-		for (let j = i + 1; j < a.length; ++j) {
-			if (a[i].name === a[j].name)
-				a.splice(j--, 1);
-		}
-	}
-	return a;
 };

@@ -72,7 +72,7 @@ module.exports = function(grunt) {
         src: 'data/devs/*'
     },
     importApps: {
-        src: 'data/apps/*/*'
+        src: 'data/apps/*/*/*'
     },
     importKeys: {
         src: 'data/apps/*/*'
@@ -108,7 +108,7 @@ module.exports = function(grunt) {
         src: 'data/apps/*/*'
     },
     deleteApps: {
-        src: 'data/apps/*/*'
+        src: 'data/apps/*/*/*'
     },
     deleteProducts: {
         src: 'data/products/*'
