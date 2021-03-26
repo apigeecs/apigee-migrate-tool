@@ -26,6 +26,8 @@ With the tool, you can import and export data about:
 - Reports
 - Spec store (Not available on-premises. Spec store APIs are in experimental status, so may change in the future)
 - Target Servers
+- Virtual Hosts
+- TLS Key Stores
 
 You can also import the following kinds of data from a CSV file to an Apigee org:
   - developers
@@ -37,8 +39,8 @@ You can also import the following kinds of data from a CSV file to an Apigee org
 
 **Please note** that the following entities won't be migrated as part of this tool. In most cases, you'll need to migrate these manually using the Apigee Edge console. For more on migrating these, see the Apigee [documentation on org data migration](https://docs.apigee.com/api-services/content/migrating-data-apigee-trial-org).
  - Cache resources and cached values.
- - Environment resources such as virtualhosts, and keystores.
  - KVM entries for "encrypted" key-value maps. Encrypted values can't be retrieved using the management API. Make a note of the values you're using in your old org, then add these values manually to the new org.
+ - TLS certificates and their private keys. The public parts of certificates are exported for reference, but keys cannot be retrieved using the API.
  - Organization or environment level resources such as .jar files, .js files, and so on.
 
 ## Installing the tool
@@ -142,29 +144,43 @@ You can run the export and import tasks separately for each kind of org data. Wh
 
 #### Sequence for exporting data
 ```
-grunt exportProducts
 grunt exportDevs
+grunt exportCompanies
+grunt exportProducts
 grunt exportApps
 grunt exportProxies
 grunt exportSharedFlows
+grunt exportFlowHooks
 grunt exportTargetServers
 grunt exportProxyKVM
 grunt exportEnvKVM
 grunt exportOrgKVM
+grunt exportReports
+grunt exportKeyStores
+grunt exportReferences
+grunt exportVirtualHosts
+grunt exportAllSpecs
 ```
 
 #### Sequence for importing data
 ```
+grunt importKeyStores
+grunt importReferences
 grunt importTargetServers
-grunt importProxies
-grunt importSharedFlows
-grunt importDevs
+grunt importVirtualHosts
+grunt importAllSpecs
 grunt importProducts
+grunt importDevs
+grunt importCompanies
 grunt importApps
 grunt importKeys
+grunt importProxies
+grunt importSharedFlows
+grunt importFlowHooks
 grunt importProxyKVM
 grunt importEnvKVM
 grunt importOrgKVM
+grunt importReports
 ```
 
 By default the `importDevs`, `importApps`, and `importKeys` tasks import all the entities from the respective data folder.
@@ -174,7 +190,7 @@ By default the `importDevs`, `importApps`, and `importKeys` tasks import all the
 To import a specific entity, use the `src` argument to specify which entity data you want to import.
 
 ```
-grunt importApps -v --src=./data/apps/*/App*
+grunt importApps -v --src=./data/apps/developers/*/App*
 ```
 
 

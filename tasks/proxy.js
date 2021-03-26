@@ -171,7 +171,7 @@ module.exports = function(grunt) {
 	});
 
 
-	grunt.registerTask('deployProxies', 'Deploy revision 1 on all proxies for org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
+	grunt.registerTask('deployProxies', 'Deploy revision 1 on all proxies for org ' + apigee.to.org + " environment " + apigee.to.env + " [" + apigee.to.version + "]", function() {
 			var url = apigee.to.url;
 			var org = apigee.to.org;
 			var env = apigee.to.env;
@@ -217,7 +217,7 @@ module.exports = function(grunt) {
 			}.bind( {proxy_url: proxy_url}) ).auth(userid, passwd, true);
 	});
 
-	grunt.registerTask('undeployProxies', 'UnDeploy revision 1 on all proxies for org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
+	grunt.registerTask('undeployProxies', 'UnDeploy revision 1 on all proxies for org ' + apigee.to.org + " environment "+ apigee.to.env + " [" + apigee.to.version + "]", function() {
 			var url = apigee.to.url;
 			var org = apigee.to.org;
 			var env = apigee.to.env;

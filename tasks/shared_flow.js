@@ -178,7 +178,7 @@ module.exports = function(grunt) {
     });
 
 
-    grunt.registerTask('deploySharedFlows', 'Deploy revision 1 on all shared flows for org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
+    grunt.registerTask('deploySharedFlows', 'Deploy revision 1 on all shared flows for org ' + apigee.to.org + " environment " + apigee.to.env + " [" + apigee.to.version + "]", function() {
             var url = apigee.to.url;
             var org = apigee.to.org;
             var env = apigee.to.env;
@@ -227,7 +227,7 @@ module.exports = function(grunt) {
             }.bind( {shared_flow_url: shared_flow_url}) ).auth(userid, passwd, true);
     });
 
-    grunt.registerTask('undeploySharedFlows', 'UnDeploy revision 1 on all shared flows for org ' + apigee.to.org + " [" + apigee.to.version + "]", function() {
+    grunt.registerTask('undeploySharedFlows', 'UnDeploy revision 1 on all shared flows for org ' + apigee.to.org + " environment " + apigee.to.env + " [" + apigee.to.version + "]", function() {
             var url = apigee.to.url;
             var org = apigee.to.org;
             var env = apigee.to.env;
