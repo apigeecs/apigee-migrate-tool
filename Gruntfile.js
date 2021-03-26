@@ -81,7 +81,7 @@ module.exports = function(grunt) {
         src: 'data/apps/*/*/*'
     },
     importKeys: {
-        src: 'data/apps/*/*'
+        src: 'data/apps/*/*/*'
     },
     importTargetServers: {
         src: 'data/targetservers/*'
@@ -111,7 +111,7 @@ module.exports = function(grunt) {
         src: './data/virtualhosts/*'
     },
     deleteKeys: {
-        src: 'data/apps/*/*'
+        src: 'data/apps/*/*/*'
     },
     deleteApps: {
         src: 'data/apps/*/*/*'
