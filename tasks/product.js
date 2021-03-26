@@ -91,6 +91,9 @@ module.exports = function (grunt) {
 		let org = apigee.to.org;
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
+		let from_env = apigee.from.env;
+		let to_env = apigee.to.env;
+		let env_map = apigee.environments;
 		let files = this.filesSrc;
 		let done = this.async();
 
@@ -109,6 +112,29 @@ module.exports = function (grunt) {
 		files.forEach(function (filepath) {
 			let content = grunt.file.read(filepath);
 			let product_name = path.basename(filepath);
+
+			// Perform environment rename(s) if required
+			if ((from_env != to_env) || env_map) {
+				let product_content = JSON.parse(content);
+				let product_modified = false;
+
+				if (product_content.environments) {
+					for (let i = 0; i < product_content.environments.length; i++) {
+						if (product_content.environments[i] == from_env) {
+							product_content.environments[i] = to_env;
+							product_modified = true;
+						}
+						else if (env_map && env_map[product_content.environments[i]]) {
+							product_content.environments[i] = env_map[product_content.environments[i]];
+							product_modified = true;
+						}
+					}
+				}
+
+				if (product_modified) {
+					content = JSON.stringify(product_content);
+				}
+			}
 
 			waitForPost(url, {
 				headers: { 'content-type': 'application/json' },
@@ -142,6 +168,8 @@ module.exports = function (grunt) {
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
 		let files = this.filesSrc;
+		let del_count = 0;
+		let del_err_count = 0;
 		let done = this.async();
 
 		const { waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
@@ -160,26 +188,30 @@ module.exports = function (grunt) {
 			let content = grunt.file.read(filepath);
 			let product = JSON.parse(content);
 
-			let del_url = url + product.name;
+			let del_url = url + encodeURIComponent(product.name);
 			grunt.verbose.writeln(del_url);
 
 			waitForDelete(del_url, function (error, response, body) {
 				let status = 999;
 				if (response)
 					status = response.statusCode;
-				grunt.verbose.writeln('Resp [' + status + '] for product deletion ' + this.url + ' -> ' + body);
-				if (error || status != 200) {
+
+				if (!error && status == 200) {
+					++del_count;
+					grunt.verbose.writeln('Resp [' + status + '] for product deletion ' + this.url + ' -> ' + body);
+				}
+				else {
 					grunt.verbose.error('ERROR Resp [' + status + '] for product deletion ' + this.url + ' -> ' + body);
 				}
 			}.bind({ url: del_url }));
 		});
 
 		waitForCompletion(function () {
-			if (files.length <= 0) {
-				grunt.verbose.writeln("No API Products");
+			if (del_count) {
+				grunt.log.ok('Deleted ' + del_count + ' API products');
 			}
-			else {
-				grunt.log.ok('Deleted ' + files.length + ' API products');
+			if (del_err_count) {
+				grunt.log.error('Failed to delete ' + del_err_count + ' API products');
 			}
 
 			done();

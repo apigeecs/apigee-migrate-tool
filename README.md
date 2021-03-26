@@ -114,6 +114,21 @@ env | The environment to export from or import to
     } ;
     ```
 
+If the source and destination systems contain multiple environments with differing names, these can be mapped by adding an `environments` object to config.js:
+
+```
+    module.exports = {
+        // from
+        // to
+        environments: {
+            'old-env-1': 'new-env-1',
+            'old-env-2': 'new-env-2'
+        }
+    }
+```
+
+This may resolve issues importing API Products and Reports, which exist at org level but may refer to environments which are not being migrated. 
+
 ## Using the tool
 
 Once you've configured the tool with information about your orgs, you can run it to export and import data. To use the tool, open a command prompt and change to the root directory of the repository you cloned.
