@@ -16,11 +16,9 @@ module.exports = function (grunt, userid, passwd) {
 	}
 
 	const waitForPost = function (url, opts, callback) {
-		let boundcb = callback.bind({ url: url });
-
 		++pending_tasks;
 		let r = request.post({ url: url, ...opts }, function (error, response, body) {
-			boundcb(error, response, body);
+			callback(error, response, body);
 			--pending_tasks;
 		}).auth(userid, passwd, true);
 
@@ -28,11 +26,9 @@ module.exports = function (grunt, userid, passwd) {
 	}
 
 	const waitForDelete = function (url, callback) {
-		let boundcb = callback.bind({ url: url });
-
 		++pending_tasks;
 		let r = request.del(url, function (error, response, body) {
-			boundcb(error, response, body);
+			callback(error, response, body);
 			--pending_tasks;
 		}).auth(userid, passwd, true);
 

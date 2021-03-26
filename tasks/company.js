@@ -108,7 +108,7 @@ module.exports = function (grunt) {
 
 					grunt.verbose.error('ERROR Resp [' + status + '] for company creation ' + this.url + ' -> ' + body);
 				}
-			});
+			}.bind({ url: companies_url }));
 		});
 
 		waitForCompletion(function () {
@@ -161,7 +161,7 @@ module.exports = function (grunt) {
 
 					grunt.verbose.error('ERROR Resp [' + status + '] for dev deletion ' + this.url + ' -> ' + body);
 				}
-			});
+			}.bind({ url: del_url }));
 
 			waitForCompletion(function () {
 				grunt.log.ok('Deleted ' + company_count + ' companies');

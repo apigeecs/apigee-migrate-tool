@@ -29,8 +29,7 @@ module.exports = function (grunt) {
 				products = JSON.parse(body);
 
 				if (products.length == 0) {
-					grunt.verbose.writeln("No Products");
-					done();
+					return;
 				}
 
 				for (let i = 0; i < products.length; i++) {
@@ -38,32 +37,34 @@ module.exports = function (grunt) {
 					grunt.file.mkdir(filepath);
 
 					grunt.verbose.writeln("PRODUCT URL: " + product_url.length + " " + product_url);
+
 					// An Edge bug allows products to be created with very long names which cannot be used in URLs.
 					if (product_url.length > 1024) {
-						grunt.log.write("SKIPPING Product, URL too long: ");
-					} else {
-						// Retrieve product details
-						waitForGet(product_url, function (error, response, body) {
-							if (!error && response.statusCode == 200) {
-								grunt.verbose.writeln("PRODUCT " + body);
-								let product_detail = JSON.parse(body);
-
-								if (product_detail && product_detail.name) {
-									let dev_file = filepath + "/" + product_detail.name;
-									grunt.file.write(dev_file, body);
-
-									grunt.verbose.writeln('Exported Product ' + product_detail.name);
-								}
-							}
-							else {
-								grunt.log.error('Error exporting product ' + product_url);
-
-								if (error) {
-									grunt.log.error(error);
-								}
-							}
-						});
+						grunt.log.write("SKIPPING Product, URL too long: " + products[i]);
+						continue;
 					}
+
+					// Retrieve product details
+					waitForGet(product_url, function (error, response, body) {
+						if (!error && response.statusCode == 200) {
+							grunt.verbose.writeln("PRODUCT " + body);
+							let product_detail = JSON.parse(body);
+
+							if (product_detail && product_detail.name) {
+								let dev_file = path.join(filepath, product_detail.name);
+								grunt.file.write(dev_file, body);
+
+								grunt.verbose.writeln('Exported Product ' + product_detail.name);
+							}
+						}
+						else {
+							grunt.log.error('Error exporting product ' + this.url);
+
+							if (error) {
+								grunt.log.error(error);
+							}
+						}
+					}.bind({ url: product_url }));
 					// End product details
 				};
 			}
@@ -118,14 +119,9 @@ module.exports = function (grunt) {
 					status = response.statusCode;
 				grunt.verbose.writeln('Resp [' + status + '] for product creation ' + this.url + ' -> ' + body);
 				if (error || status != 201) {
-					grunt.verbose.error('ERROR Resp [' + status + '] for product ' + product_name + ' creation -> ' + body);
+					grunt.verbose.error('ERROR Resp [' + status + '] for product ' + this.product_name + ' creation -> ' + body);
 				}
-				done_count++;
-				if (done_count == files.length) {
-					grunt.log.ok('Processed ' + done_count + ' products');
-					done();
-				}
-			});
+			}.bind({ url: url, product_name: product_name }));
 		});
 
 		waitForCompletion(function () {
@@ -175,15 +171,15 @@ module.exports = function (grunt) {
 				if (error || status != 200) {
 					grunt.verbose.error('ERROR Resp [' + status + '] for product deletion ' + this.url + ' -> ' + body);
 				}
-			});
+			}.bind({ url: del_url }));
 		});
-		
+
 		waitForCompletion(function () {
 			if (files.length <= 0) {
 				grunt.verbose.writeln("No API Products");
 			}
 			else {
-				grunt.log.ok('Processed ' + files.length + ' API products');
+				grunt.log.ok('Deleted ' + files.length + ' API products');
 			}
 
 			done();

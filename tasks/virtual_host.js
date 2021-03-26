@@ -117,15 +117,15 @@ module.exports = function (grunt) {
 
 				if (!error && status == 201) {
 					grunt.verbose.writeln('Resp [' + status + '] for virtual host creation ' + this.url + ' -> ' + body);
-					grunt.verbose.writeln('Created virtual host ' + vhostName);
+					grunt.verbose.writeln('Created virtual host ' + this.vhostName);
 				}
 				else {
-					grunt.log.error('ERROR Resp [' + status + '] for virtual host creation ' + vhostName + ' -> ' + body);
+					grunt.log.error('ERROR Resp [' + status + '] for virtual host creation ' + this.vhostName + ' -> ' + body);
 					if (error) {
 						grunt.log.error(error);
 					}
 				}
-			});
+			}.bind({ url: url, vhostName: vhostName }));
 		});
 
 		waitForCompletion(function () {
@@ -177,15 +177,15 @@ module.exports = function (grunt) {
 
 				if (!error && status == 200) {
 					grunt.verbose.writeln('Resp [' + status + '] for virtual host deletion ' + this.url + ' -> ' + body);
-					grunt.verbose.writeln('Deleted virtual host ' + vhostName);
+					grunt.verbose.writeln('Deleted virtual host ' + this.vhostName);
 				}
 				else {
-					grunt.log.error('ERROR Resp [' + status + '] for virtuak host deletion ' + vhostName + ' -> ' + body);
+					grunt.log.error('ERROR Resp [' + status + '] for virtuak host deletion ' + this.vhostName + ' -> ' + body);
 					if (error) {
 						grunt.log.error(error);
 					}
 				}
-			});
+			}.bind({ url: del_url, vhostName: vhostName }));
 		});
 
 		waitForCompletion(function () {

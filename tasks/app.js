@@ -266,7 +266,7 @@ module.exports = function (grunt) {
 											grunt.log.error(error);
 										}
 									}
-								}.bind({ owner: owner, app_name: app.name }));
+								}.bind({ url: status_url, owner: owner, app_name: app.name }));
 							}
 
 							// Delete the key generated when App is created
@@ -289,7 +289,7 @@ module.exports = function (grunt) {
 										grunt.log.error(error);
 									}
 								}
-							});
+							}.bind({ url: delete_url }));
 						}
 						else {
 							++app_err_count;
@@ -308,7 +308,7 @@ module.exports = function (grunt) {
 						}
 						grunt.log.error(err);
 					}
-				}
+				}.bind({ url: app_url })
 			);
 		});
 
@@ -397,7 +397,7 @@ module.exports = function (grunt) {
 					grunt.log.error('ERROR Resp [' + status + '] for delete app ' + this.url + ' -> ' + body);
 					++del_err_count;
 				}
-			});
+			}.bind({ url: app_del_url }));
 		});
 
 		waitForCompletion(function () {

@@ -65,12 +65,12 @@ module.exports = function (grunt) {
 											grunt.verbose.writeln('Exported certificate ' + cert);
 										}
 										else {
-											grunt.log.error('Error ' + response.statusCode + ' exporting certificate from ' + cert_url);
+											grunt.log.error('Error ' + response.statusCode + ' exporting certificate from ' + this.url);
 											if (error) {
 												grunt.log.error(error);
 											}
 										}
-									});
+									}.bind({ url: cert_url }));
 								}
 							}
 
@@ -155,12 +155,12 @@ module.exports = function (grunt) {
 					grunt.verbose.writeln('Created keystore ' + keystoreName);
 				}
 				else {
-					grunt.log.error('ERROR Resp [' + status + '] for keystore creation ' + keystoreName + ' -> ' + body);
+					grunt.log.error('ERROR Resp [' + status + '] for keystore creation ' + this.keystoreName + ' -> ' + body);
 					if (error) {
 						grunt.log.error(error);
 					}
 				}
-			});
+			}.bind({ url: url, keystoreName: keystoreName }));
 		});
 
 		waitForCompletion(function () {
@@ -215,12 +215,12 @@ module.exports = function (grunt) {
 					grunt.verbose.writeln('Deleted keystore ' + keystoreName);
 				}
 				else {
-					grunt.log.error('ERROR Resp [' + status + '] for keystore deletion ' + keystoreName + ' -> ' + body);
+					grunt.log.error('ERROR Resp [' + status + '] for keystore deletion ' + this.keystoreName + ' -> ' + body);
 					if (error) {
 						grunt.log.error(error);
 					}
 				}
-			});
+			}.bind({ url: del_url, keystoreName: keystoreName }));
 		});
 
 		waitForCompletion(function () {

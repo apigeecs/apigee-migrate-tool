@@ -120,12 +120,12 @@ module.exports = function (grunt) {
 					grunt.verbose.writeln('Created reference ' + refName);
 				}
 				else {
-					grunt.log.error('ERROR Resp [' + status + '] for reference creation ' + refName + ' -> ' + body);
+					grunt.log.error('ERROR Resp [' + status + '] for reference creation ' + this.refName + ' -> ' + body);
 					if (error) {
 						grunt.log.error(error);
 					}
 				}
-			});
+			}.bind({ url: url, refName: refName }));
 		});
 
 		waitForCompletion(function () {
@@ -177,15 +177,15 @@ module.exports = function (grunt) {
 
 				if (!error && status == 200) {
 					grunt.verbose.writeln('Resp [' + status + '] for reference deletion ' + this.url + ' -> ' + body);
-					grunt.verbose.writeln('Deleted reference ' + refName);
+					grunt.verbose.writeln('Deleted reference ' + this.refName);
 				}
 				else {
-					grunt.log.error('ERROR Resp [' + status + '] for reference deletion ' + refName + ' -> ' + body);
+					grunt.log.error('ERROR Resp [' + status + '] for reference deletion ' + this.refName + ' -> ' + body);
 					if (error) {
 						grunt.log.error(error);
 					}
 				}
-			});
+			}.bind({ url: del_url, refName: refName }));
 		});
 
 		waitForCompletion(function () {
