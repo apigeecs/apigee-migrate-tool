@@ -180,7 +180,7 @@ module.exports = function (grunt) {
 					grunt.verbose.writeln('Deleted virtual host ' + this.vhostName);
 				}
 				else {
-					grunt.log.error('ERROR Resp [' + status + '] for virtuak host deletion ' + this.vhostName + ' -> ' + body);
+					grunt.log.error('ERROR Resp [' + status + '] for virtual host deletion ' + this.vhostName + ' -> ' + body);
 					if (error) {
 						grunt.log.error(error);
 					}

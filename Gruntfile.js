@@ -157,6 +157,9 @@ module.exports = function(grunt) {
     deleteReferences: {
         src: './data/virtualhosts/*'
     },
+    deleteVirtualHosts: {
+        src: './data/virtualhosts/*'
+    },
     readCSVDevs: {
         in_devs: './input/devs.csv',
         out_devs: './data/devs/'
