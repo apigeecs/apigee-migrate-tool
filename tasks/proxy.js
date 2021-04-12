@@ -205,7 +205,7 @@ module.exports = function(grunt) {
 								grunt.log.ok('Processed ' + done_count + ' proxies');
 								done();
 							}
-						}).auth(userid, passwd, true);
+						}.bind( {proxy_url: proxy_url}) ).auth(userid, passwd, true);
 				    	// End proxy deploy
 				    }; 
 				    
@@ -214,7 +214,7 @@ module.exports = function(grunt) {
 				{
 					grunt.log.error(error);
 				}
-			}.bind( {proxy_url: proxy_url}) ).auth(userid, passwd, true);
+			}).auth(userid, passwd, true);
 	});
 
 	grunt.registerTask('undeployProxies', 'UnDeploy revision 1 on all proxies for org ' + apigee.to.org + " environment "+ apigee.to.env + " [" + apigee.to.version + "]", function() {
