@@ -25,6 +25,16 @@ module.exports = function (grunt, userid, passwd) {
 		return r;
 	}
 
+	const waitForPut = function (url, opts, callback) {
+		++pending_tasks;
+		let r = request.put({ url: url, ...opts }, function (error, response, body) {
+			callback(error, response, body);
+			--pending_tasks;
+		}).auth(userid, passwd, true);
+
+		return r;
+	}
+
 	const waitForDelete = function (url, callback) {
 		++pending_tasks;
 		let r = request.del(url, function (error, response, body) {
@@ -50,5 +60,5 @@ module.exports = function (grunt, userid, passwd) {
 		}, 1000);
 	}
 
-	return { waitForGet, waitForPost, waitForDelete, waitForCompletion };
+	return { waitForGet, waitForPost, waitForPut, waitForDelete, waitForCompletion };
 }

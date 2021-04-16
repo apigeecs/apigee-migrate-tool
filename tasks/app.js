@@ -166,12 +166,14 @@ module.exports = function (grunt) {
 		let passwd = apigee.to.passwd;
 		let files = this.filesSrc;
 		let app_count = 0;
+		let app_create_count = 0;
+		let app_update_count = 0;
 		let app_err_count = 0;
 		let status_err_count = 0;
 		let key_err_count = 0;
 		let done = this.async();
 
-		const { waitForPost, waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+		const { waitForGet, waitForPost, waitForPut, waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		let f = grunt.option('src');
 		if (f) {
@@ -190,15 +192,18 @@ module.exports = function (grunt) {
 			let folders = filepath.split("/");
 			let apptype = folders[folders.length - 3];
 			let owner = folders[folders.length - 2];
-			let app_url;
+			let ownertype;
+			let apps_url;
 
 			switch (apptype) {
 				case "developers":
-					app_url = developers_url + "/" + encodeURIComponent(owner) + "/apps";
+					apps_url = developers_url + "/" + encodeURIComponent(owner) + "/apps";
+					ownertype = "developer";
 					break;
 
 				case "companies":
-					app_url = companies_url + "/" + encodeURIComponent(owner) + "/apps";
+					apps_url = companies_url + "/" + encodeURIComponent(owner) + "/apps";
+					ownertype = "company";
 					break;
 
 				default:
@@ -207,120 +212,183 @@ module.exports = function (grunt) {
 
 			let content = grunt.file.read(filepath);
 			let app = JSON.parse(content);
+			++app_count;
 
-			grunt.verbose.writeln("Creating app : " + app.name + " under developer " + owner);
+			// Check if the app already exists
+			let app_url = apps_url + "/" + encodeURIComponent(app.name);
+			waitForGet(app_url, function (error, response, body) {
+				let xstatus = 999;
+				if (response)
+					xstatus = response.statusCode;
 
-			delete app['appId'];
-			//delete app['status'];
-			delete app['developerId'];
-			delete app['lastModifiedAt'];
-			delete app['lastModifiedBy'];
-			delete app['createdAt'];
-			delete app['createdBy'];
-			delete app['appFamily'];
-			delete app['accessType'];
-			delete app['credentials'];
+				if (!error && (xstatus == 200)) {
+					// App already exists
+					let existingApp = JSON.parse(body);
 
-			grunt.verbose.writeln("Creating App " + app_url);
-			grunt.verbose.writeln(JSON.stringify(app));
+					// Is the import file newer than the instance in Apigee?
+					if (existingApp.lastModifiedAt && (existingApp.lastModifiedAt < app.lastModifiedAt)) {
+						grunt.verbose.writeln(`Updating app: ${this.app_name} under ${this.ownertype} ${this.owner}`);
 
-			waitForPost(app_url, {
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(app)
-			},
-				function (error, response, body) {
-					try {
-						let cstatus = 999;
-						if (response)
-							cstatus = response.statusCode;
+						let updateApp = { ...app };
+						delete updateApp['lastModifiedAt'];
+						delete updateApp['lastModifiedBy'];
 
-						if (!error && (cstatus == 200 || cstatus == 201)) {
-							++app_count;
-							grunt.verbose.writeln('Resp [' + response.statusCode + '] for create app  ' + this.url + ' -> ' + body);
-							let app_resp = JSON.parse(body);
+						waitForPut(app_url, {
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify(updateApp)
+						}, function (error, response, body) {
+							let ustatus = 999;
+							if (response)
+								ustatus = response.statusCode;
 
-							// Set app status
-							if (app['status'] && (app_resp['status'] != app['status'])) {
-								let status_url = app_url + '/' + encodeURIComponent(app.name) + '?action=';
-								if (app['status'] == 'approved')
-									status_url += "approve";
-								else
-									status_url += "revoke";
+							if (!error && (ustatus == 200 || ustatus == 201)) {
+								++app_update_count;
+								grunt.verbose.writeln('Resp [' + response.statusCode + '] for update app  ' + this.url + ' -> ' + body);
+							} else {
+								++app_err_count;
 
-								waitForPost(status_url, {}, function (error, response, body) {
-									let status = 999;
-									if (response) {
-										status = response.statusCode;
-									}
-
-									if (!error && status == 204) {
-										grunt.verbose.writeln('Resp [' + status + '] for app status ' + this.owner + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
-									}
-									else {
-										++status_err_count;
-										grunt.log.error('ERROR Resp [' + status + '] for ' + this.owner + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
-
-										if (error) {
-											grunt.log.error(error);
-										}
-									}
-								}.bind({ url: status_url, owner: owner, app_name: app.name }));
-							}
-
-							// Delete the key generated when App is created
-							const client_key = app_resp.credentials[0].consumerKey;
-							const delete_url = app_url + '/' + encodeURIComponent(app.name) + '/keys/' + client_key;
-
-							waitForDelete(delete_url, function (error, response, body) {
-								let status = 999;
-								if (response)
-									status = response.statusCode;
-
-								if (!error && status == 200) {
-									grunt.verbose.writeln('Resp [' + status + '] for key delete ' + this.url + ' -> ' + body);
+								if (error) {
+									grunt.log.error(error);
 								}
-								else {
-									++key_err_count;
-									grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.url + ' -> ' + body);
+								if (response) {
+									grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for update app  ' + this.url + ' -> ' + body);
+								}
+							}
+						}.bind({ url: app_url }));
+					} else {
+						grunt.verbose.writeln(`App: ${this.app_name} under ${this.ownertype} ${this.owner} is up to date`);
+					}
+				} else if (xstatus == 404) {
+					// App does not exist
+					grunt.verbose.writeln(`Creating app: ${this.app_name} under ${this.ownertype} ${this.owner}`);
+
+					let createApp = { ...app };
+					delete createApp['lastModifiedAt'];
+					delete createApp['lastModifiedBy'];
+					delete createApp['appId'];
+					delete createApp['developerId'];
+					delete createApp['createdAt'];
+					delete createApp['createdBy'];
+					delete createApp['appFamily'];
+					delete createApp['accessType'];
+					delete createApp['credentials'];
+
+					grunt.verbose.writeln("Creating App " + apps_url);
+					grunt.verbose.writeln(JSON.stringify(createApp));
+
+					waitForPost(apps_url, {
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify(createApp)
+					},
+						function (error, response, body) {
+							try {
+								let cstatus = 999;
+								if (response)
+									cstatus = response.statusCode;
+
+								if (!error && (cstatus == 200 || cstatus == 201)) {
+									++app_create_count;
+									grunt.verbose.writeln('Resp [' + response.statusCode + '] for create app  ' + this.url + ' -> ' + body);
+									let app_resp = JSON.parse(body);
+
+									// Set app status
+									if (createApp['status'] && (app_resp['status'] != createApp['status'])) {
+										let status_url = apps_url + '/' + encodeURIComponent(createApp.name) + '?action=';
+										if (createApp['status'] == 'approved')
+											status_url += "approve";
+										else
+											status_url += "revoke";
+
+										waitForPost(status_url, {}, function (error, response, body) {
+											let status = 999;
+											if (response) {
+												status = response.statusCode;
+											}
+
+											if (!error && status == 204) {
+												grunt.verbose.writeln('Resp [' + status + '] for app status ' + this.owner + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
+											}
+											else {
+												++status_err_count;
+												grunt.log.error('ERROR Resp [' + status + '] for ' + this.owner + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
+
+												if (error) {
+													grunt.log.error(error);
+												}
+											}
+										}.bind({ url: status_url, owner: owner, app_name: createApp.name }));
+									}
+
+									// Delete the key generated when App is created
+									const client_key = app_resp.credentials[0].consumerKey;
+									const delete_url = apps_url + '/' + encodeURIComponent(createApp.name) + '/keys/' + client_key;
+
+									waitForDelete(delete_url, function (error, response, body) {
+										let status = 999;
+										if (response)
+											status = response.statusCode;
+
+										if (!error && status == 200) {
+											grunt.verbose.writeln('Resp [' + status + '] for key delete ' + this.url + ' -> ' + body);
+										}
+										else {
+											++key_err_count;
+											grunt.log.error('ERROR Resp [' + status + '] for key delete ' + this.url + ' -> ' + body);
+
+											if (error) {
+												grunt.log.error(error);
+											}
+										}
+									}.bind({ url: delete_url }));
+								} else {
+									++app_err_count;
 
 									if (error) {
 										grunt.log.error(error);
 									}
+									if (response) {
+										grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create app  ' + this.url + ' -> ' + body);
+									}
 								}
-							}.bind({ url: delete_url }));
-						}
-						else {
-							++app_err_count;
+							} catch (err) {
+								grunt.log.error("ERROR - from App URL : " + apps_url);
+								if (body) {
+									grunt.log.error(body);
+								}
+								grunt.log.error(err);
+							}
+						}.bind({ url: apps_url })
+					);
+				} else {
+					// Unexpected status checking for app existence
+					++app_err_count;
 
-							if (error) {
-								grunt.log.error(error);
-							}
-							if (response) {
-								grunt.verbose.writeln('ERROR Resp [' + response.statusCode + '] for create app  ' + this.url + ' -> ' + body);
-							}
-						}
-					} catch (err) {
-						grunt.log.error("ERROR - from App URL : " + app_url);
-						if (body) {
-							grunt.log.error(body);
-						}
-						grunt.log.error(err);
+					grunt.log.error('ERROR Resp [' + xstatus + '] for ' + this.owner + ' - ' + this.app_name + ' - ' + this.url + ' -> ' + body);
+					if (error) {
+						grunt.log.error(error);
 					}
-				}.bind({ url: app_url })
-			);
+				}
+			}.bind({ url: app_url, owner: owner, ownertype: ownertype, app_name: app.name }));
 		});
 
 		waitForCompletion(function () {
-			if (app_count <= 0) {
-				grunt.verbose.writeln("No Apps");
+			if (app_count) {
+				grunt.log.ok('Processed ' + app_count + ' apps');
+			} else {
+				grunt.log.ok('No apps found');
 			}
-			else {
-				grunt.log.ok('Imported ' + app_count + ' apps');
+			if (app_create_count) {
+				grunt.log.ok('Created ' + app_create_count + ' apps');
+			}
+			if (app_update_count) {
+				grunt.log.ok('Updated ' + app_update_count + ' apps');
 			}
 			if (app_err_count) {
-				grunt.log.error('Failed to create ' + app_err_count + ' apps');
+				grunt.log.error('Failed to create/update ' + app_err_count + ' apps');
 			}
 			if (status_err_count) {
 				grunt.log.error('Failed to set status for ' + status_err_count + ' apps');
