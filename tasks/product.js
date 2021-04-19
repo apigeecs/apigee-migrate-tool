@@ -95,9 +95,13 @@ module.exports = function (grunt) {
 		let to_env = apigee.to.env;
 		let env_map = apigee.environments;
 		let files = this.filesSrc;
+		let product_count = 0;
+		let product_create_count = 0;
+		let product_update_count = 0;
+		let product_err_count = 0;
 		let done = this.async();
 
-		const { waitForPost, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+		const { waitForGet, waitForPost, waitForPut, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		let f = grunt.option('src');
 		if (f) {
@@ -111,11 +115,15 @@ module.exports = function (grunt) {
 
 		files.forEach(function (filepath) {
 			let content = grunt.file.read(filepath);
+			let product_content = JSON.parse(content);
 			let product_name = path.basename(filepath);
+
+			++product_count;
+
+			let product_url = url + "/" + encodeURIComponent(product_name);
 
 			// Perform environment rename(s) if required
 			if ((from_env != to_env) || env_map) {
-				let product_content = JSON.parse(content);
 				let product_modified = false;
 
 				if (product_content.environments) {
@@ -136,26 +144,89 @@ module.exports = function (grunt) {
 				}
 			}
 
-			waitForPost(url, {
-				headers: { 'content-type': 'application/json' },
-				body: content
-			}, function (error, response, body) {
+			waitForGet(product_url, function (error, response, body) {
 				let status = 999;
 				if (response)
 					status = response.statusCode;
-				grunt.verbose.writeln('Resp [' + status + '] for product creation ' + this.url + ' -> ' + body);
-				if (error || status != 201) {
-					grunt.verbose.error('ERROR Resp [' + status + '] for product ' + this.product_name + ' creation -> ' + body);
+
+				if (!error && (status == 200)) {
+					// Product already exists
+					let existingProduct = JSON.parse(body);
+
+					// Is the import file newer than the instance in Apigee?
+					if (existingProduct.lastModifiedAt && (existingProduct.lastModifiedAt < this.product_content.lastModifiedAt)) {
+						grunt.verbose.writeln(`Updating API product: ${this.product_name}`);
+
+						waitForPut(this.url, {
+							headers: { 'content-type': 'application/json' },
+							body: content
+						}, function (error, response, body) {
+							let ustatus = 999;
+							if (response)
+								ustatus = response.statusCode;
+
+							if (!error && (ustatus == 200 || ustatus == 201)) {
+								++product_update_count
+								grunt.verbose.writeln('Resp [' + ustatus + '] for product update ' + this.url + ' -> ' + body);
+							} else {
+								++product_err_count;
+								grunt.verbose.error('ERROR Resp [' + ustatus + '] for product ' + this.product_name + ' update -> ' + body);
+								if (error) {
+									grunt.log.error(error);
+								}
+							}
+						}.bind({ url: this.url, product_name: this.product_name }));
+					} else {
+						grunt.verbose.writeln(`API product: ${this.product_name} is up to date`);
+					}
+				} else if (status == 404) {
+					// Product does not exist
+					grunt.verbose.writeln(`Creating API product: ${this.product_name}`);
+
+					waitForPost(url, {
+						headers: { 'content-type': 'application/json' },
+						body: content
+					}, function (error, response, body) {
+						let cstatus = 999;
+						if (response)
+							cstatus = response.statusCode;
+
+						if (!error && (cstatus == 201)) {
+							++product_create_count
+							grunt.verbose.writeln('Resp [' + cstatus + '] for product creation ' + this.url + ' -> ' + body);
+						} else {
+							++product_err_count;
+							grunt.verbose.error('ERROR Resp [' + cstatus + '] for product ' + this.product_name + ' creation -> ' + body);
+							if (error) {
+								grunt.log.error(error);
+							}
+						}
+					}.bind({ url: url, product_name: this.product_name }));
+				} else {
+					// Error fetching product details
+					++product_err_count;
+					grunt.verbose.error('ERROR Resp [' + status + '] retrieving details for product ' + this.product_name);
+					if (error) {
+						grunt.log.error(error);
+					}
 				}
-			}.bind({ url: url, product_name: product_name }));
+			}.bind({ url: product_url, product_name: product_name, product_content: product_content }));
 		});
 
 		waitForCompletion(function () {
-			if (files.length <= 0) {
-				grunt.verbose.writeln("No API Products");
+			if (product_count) {
+				grunt.log.ok('Processed ' + product_count + ' API products');
+			} else {
+				grunt.log.ok("No API Products");
 			}
-			else {
-				grunt.log.ok('Processed ' + files.length + ' API products');
+			if (product_create_count) {
+				grunt.log.ok('Created ' + product_create_count + ' API products');
+			}
+			if (product_update_count) {
+				grunt.log.ok('Updated ' + product_update_count + ' API products');
+			}
+			if (product_err_count) {
+				grunt.log.error('Failed to create/update ' + product_err_count + ' API products');
 			}
 
 			done();
