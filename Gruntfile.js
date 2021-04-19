@@ -63,7 +63,7 @@ module.exports = function(grunt) {
         dest: './data/caches'
      },
     importProxies: {
-        src: './data/proxies/*.zip'
+        src: './data/proxies/*'
     },
     importSharedFlows: {
         src: './data/sharedflows/*.zip'

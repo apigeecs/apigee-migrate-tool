@@ -3,9 +3,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const request = require('request');
 const apigee = require('../config.js');
 const asyncrequest = require('../util/asyncrequest.lib.js');
+
+const proxy_file_json = 'data';
+const proxy_file_package = 'proxy.zip';
 
 module.exports = function (grunt) {
 	grunt.registerTask('exportProxies', 'Export all proxies from org ' + apigee.from.org + " [" + apigee.from.version + "]", function () {
@@ -40,6 +42,9 @@ module.exports = function (grunt) {
 				for (let i = 0; i < proxies.length; i++) {
 					let proxy_url = url + "/" + encodeURIComponent(proxies[i]);
 
+					let proxy_dir = path.join(filepath, proxies[i]);
+					grunt.file.mkdir(proxy_dir);
+
 					//Call proxy details
 					waitForGet(proxy_url, function (error, response, body) {
 						let pstatus = 999;
@@ -47,7 +52,9 @@ module.exports = function (grunt) {
 							pstatus = response.statusCode;
 
 						if (!error && pstatus == 200) {
-							grunt.verbose.writeln(body);
+							grunt.verbose.writeln(`Exporting proxy ${proxies[i]}`);
+							grunt.file.write(path.join(proxy_dir, proxy_file_json), body);
+
 							let proxy_detail = JSON.parse(body);
 
 							// gets max revision - May not be the deployed version
@@ -57,9 +64,9 @@ module.exports = function (grunt) {
 							grunt.verbose.writeln("Fetching proxy bundle: " + proxy_download_url);
 
 							waitForGet(proxy_download_url)
-								.pipe(fs.createWriteStream(path.join(filepath, proxy_detail.name + '.zip')))
+								.pipe(fs.createWriteStream(path.join(proxy_dir, proxy_file_package)))
 								.on('close', function () {
-									grunt.verbose.writeln('Proxy ' + this.proxy + '.zip written!');
+									grunt.verbose.writeln('Proxy ' + this.proxy + ' exported!');
 									++proxy_count;
 								}.bind({ proxy: proxy_detail.name }));
 						}
@@ -113,9 +120,10 @@ module.exports = function (grunt) {
 		let proxy_err_count = 0;
 		let done = this.async();
 
-		const { waitForPost, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+		const { waitForGet, waitForPost, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
-		url = url + "/v1/organizations/" + org + "/apis?action=import&name=";
+		const import_url = url + "/v1/organizations/" + org + "/apis?action=import&name=";
+		const proxy_url = url + "/v1/organizations/" + org + "/apis";
 
 		let f = grunt.option('src');
 		if (f) {
@@ -126,25 +134,60 @@ module.exports = function (grunt) {
 		}
 
 		files.forEach(function (filepath) {
-			let name = path.basename(filepath, '.zip');
-			let proxy_url = url + encodeURIComponent(name);
+			let name = path.basename(filepath);
+			let proxy_details_url = proxy_url + "/" + encodeURIComponent(name);
+			let proxy_import_url = import_url + encodeURIComponent(name);
 
-			let req = waitForPost(proxy_url, function (error, response, body) {
-				let pstatus = 999;
+			waitForGet(proxy_details_url, function (error, response, body) {
+				let dstatus = 999;
 				if (response && response.statusCode)
-					pstatus = response.statusCode;
+					dstatus = response.statusCode;
 
-				if (error) {
-					++proxy_err_count;
-					grunt.log.error(errpr);
+				let import_proxy = false;
+
+				if (!error && dstatus == 200) {
+					let existing_proxy = JSON.parse(body);
+					let new_proxy = grunt.file.readJSON(path.join(filepath, proxy_file_json));
+
+					// Is the proxy being imported newer than the existing one?
+					if (new_proxy.lastModifiedAt && ((!existing_proxy.lastModifiedAt) || (new_proxy.lastModifiedAt > existing_proxy.lastModifiedAt))) {
+						grunt.verbose.writeln(`Updating proxy ${this.proxy_name}`);
+						import_proxy = true;
+					} else {
+						grunt.verbose.writeln(`Proxy ${this.proxy_name} is up to date`);
+					}
+				} else if (dstatus == 404) {
+					grunt.verbose.writeln(`Creating proxy ${this.proxy_name}`);
+					import_proxy = true;
 				} else {
-					++proxy_count;
-					grunt.verbose.writeln('Resp [' + pstatus + '] for proxy creation ' + this.url + ' -> ' + body);
-				}
-			}.bind({ url: proxy_url }));
+					++proxy_err_count;
+					grunt.log.error('Resp [' + dstatus + '] for proxy details ' + this.url + ' -> ' + body);
 
-			let form = req.form();
-			form.append('file', fs.createReadStream(filepath));
+					if (error) {
+						grunt.log.error(error);
+					}
+				}
+
+				if (import_proxy) {
+					let req = waitForPost(proxy_import_url, function (error, response, body) {
+						let pstatus = 999;
+						if (response && response.statusCode)
+							pstatus = response.statusCode;
+		
+						if (error) {
+							++proxy_err_count;
+							grunt.log.error('Resp [' + pstatus + '] for proxy creation ' + this.url + ' -> ' + body);
+							grunt.log.error(error);
+						} else {
+							++proxy_count;
+							grunt.verbose.writeln('Resp [' + pstatus + '] for proxy creation ' + this.url + ' -> ' + body);
+						}
+					}.bind({ url: proxy_import_url }));
+		
+					let form = req.form();
+					form.append('file', fs.createReadStream(path.join(filepath, proxy_file_package)));		
+				}
+			}.bind({ url: proxy_details_url, proxy_name: name }));
 		});
 
 		waitForCompletion(function () {
@@ -187,7 +230,7 @@ module.exports = function (grunt) {
 		}
 
 		files.forEach(function (filepath) {
-			let proxy = path.basename(filepath, '.zip');
+			let proxy = path.basename(filepath);
 			let app_del_url = url + encodeURIComponent(proxy);
 
 			waitForDelete(app_del_url, function (error, response, body) {
