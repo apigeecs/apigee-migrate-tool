@@ -173,7 +173,7 @@ module.exports = function (grunt) {
 						let pstatus = 999;
 						if (response && response.statusCode)
 							pstatus = response.statusCode;
-		
+
 						if (error) {
 							++proxy_err_count;
 							grunt.log.error('Resp [' + pstatus + '] for proxy creation ' + this.url + ' -> ' + body);
@@ -183,9 +183,9 @@ module.exports = function (grunt) {
 							grunt.verbose.writeln('Resp [' + pstatus + '] for proxy creation ' + this.url + ' -> ' + body);
 						}
 					}.bind({ url: proxy_import_url }));
-		
+
 					let form = req.form();
-					form.append('file', fs.createReadStream(path.join(filepath, proxy_file_package)));		
+					form.append('file', fs.createReadStream(path.join(filepath, proxy_file_package)));
 				}
 			}.bind({ url: proxy_details_url, proxy_name: name }));
 		});
@@ -269,7 +269,7 @@ module.exports = function (grunt) {
 	});
 
 
-	grunt.registerTask('deployProxies', 'Deploy revision 1 on all proxies for org ' + apigee.to.org + " environment " + apigee.to.env + " [" + apigee.to.version + "]", function () {
+	grunt.registerTask('deployProxies', 'Deploy latest revision of all proxies for org ' + apigee.to.org + " environment " + apigee.to.env + " [" + apigee.to.version + "]", function () {
 		let url = apigee.to.url;
 		let org = apigee.to.org;
 		let env = apigee.to.env;
@@ -295,28 +295,55 @@ module.exports = function (grunt) {
 				proxies = JSON.parse(body);
 
 				for (let i = 0; i < proxies.length; i++) {
-					let proxy_url = url + "/environments/" + env + "/apis/" + encodeURIComponent(proxies[i]) + "/revisions/1/deployments";
-
-					grunt.verbose.writeln(`Deploying proxy ${proxies[i]}: ${proxy_url}`);
-
-					waitForPost(proxy_url, function (error, response, body) {
-						let dstatus = 999;
+					// Get proxy details
+					let proxy_url = proxies_url + "/" + encodeURIComponent(proxies[i]);
+					waitForGet(proxy_url, function (error, response, body) {
+						let pstatus = 999;
 						if (response && response.statusCode)
-							dstatus = response.statusCode;
+							pstatus = response.statusCode;
 
-						if (!error && dstatus == 200) {
-							++proxy_count;
-							grunt.verbose.writeln('Resp [' + dstatus + '] for proxy deployment ' + this.proxy_url + ' -> ' + body);
+						if (!error && pstatus == 200) {
+							// Get maximum revision for this proxy
+							let proxy_details = JSON.parse(body);
+							let deploy_rev = 1;
+							if (proxy_details.revision && proxy_details.revision.length > 0) {
+								deploy_rev = proxy_details.revision[proxy_details.revision.length - 1];
+							}
+
+							let deploy_url = url + "/environments/" + env + "/apis/" + encodeURIComponent(this.proxy) + "/revisions/" + deploy_rev + "/deployments";
+		
+							grunt.verbose.writeln(`Deploying proxy ${this.proxy} version ${deploy_rev}: ${deploy_url}`);
+
+							// Deploy the proxy
+							waitForPost(deploy_url, function (error, response, body) {
+								let dstatus = 999;
+								if (response && response.statusCode)
+									dstatus = response.statusCode;
+		
+								if (!error && dstatus == 200) {
+									++proxy_count;
+									grunt.verbose.writeln('Resp [' + dstatus + '] for proxy deployment ' + this.url + ' -> ' + body);
+								}
+								else {
+									++proxy_err_count;
+									grunt.log.error('ERROR Resp [' + dstatus + '] for proxy deployment ' + this.url + ' -> ' + body);
+		
+									if (error) {
+										grunt.log.error(error);
+									}
+								}
+							}.bind({ url: deploy_url, proxy: this.proxy }));		
 						}
 						else {
+							// Failed to get proxy details
 							++proxy_err_count;
-							grunt.log.error('ERROR Resp [' + dstatus + '] for proxy deployment ' + this.proxy_url + ' -> ' + body);
+							grunt.log.error('ERROR Resp [' + pstatus + '] for proxy details ' + this.url + ' -> ' + body);
 
 							if (error) {
 								grunt.log.error(error);
 							}
 						}
-					}.bind({ proxy_url: proxy_url }));
+					}.bind({ url: proxy_url, proxy: proxies[i] }));
 				};
 
 			}
@@ -347,34 +374,35 @@ module.exports = function (grunt) {
 		});
 	});
 
-	grunt.registerTask('undeployProxies', 'UnDeploy revision 1 on all proxies for org ' + apigee.to.org + " environment " + apigee.to.env + " [" + apigee.to.version + "]", function () {
+	grunt.registerTask('undeployProxies', 'UnDeploy all proxies for org ' + apigee.to.org + " environment " + apigee.to.env + " [" + apigee.to.version + "]", function () {
 		let url = apigee.to.url;
 		let org = apigee.to.org;
 		let env = apigee.to.env;
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
-		let proxies = [];
+		let deployments;
+		let deployment_count = 0;
 		let proxy_count = 0;
 		let proxy_err_count = 0;
 		let done = this.async();
-		
+
 		const { waitForGet, waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 		url = url + "/v1/organizations/" + org;
-		let proxies_url = url + "/apis";
+		let deployments_url = url + "/environments/" + env + "/deployments";
 
-		// Get proxy list
-		waitForGet(proxies_url, function (error, response, body) {
+		// Get deployed proxy list
+		waitForGet(deployments_url, function (error, response, body) {
 			let lstatus = 999;
 			if (response && response.statusCode)
 				lstatus = response.statusCode;
 
 			if (!error && lstatus == 200) {
-				proxies = JSON.parse(body);
+				deployments = JSON.parse(body);
 
-				for (let i = 0; i < proxies.length; i++) {
-					let proxy_url = url + "/environments/" + env + "/apis/" + encodeURIComponent(proxies[i]) + "/revisions/1/deployments";
-					grunt.verbose.writeln(proxy_url);
+				for (let proxy of deployments.aPIProxy) {
+					++deployment_count;
+					let proxy_url = url + "/environments/" + env + "/apis/" + encodeURIComponent(proxy.name) + "/revisions/" + proxy.revision[0].name + "/deployments";
 
 					//Call proxy undeploy
 					waitForDelete(proxy_url, function (error, response, body) {
@@ -399,22 +427,22 @@ module.exports = function (grunt) {
 				};
 			}
 			else {
-				// Failed to get proxy list
-				grunt.log.error('Resp [' + lstatus + '] for proxy list ' + this.url + ' -> ' + body);
+				// Failed to get deployment list
+				grunt.log.error('Resp [' + lstatus + '] for deployment list ' + this.url + ' -> ' + body);
 
 				if (error) {
 					grunt.log.error(error);
 				}
 			}
-		}.bind({ url: proxies_url }));
+		}.bind({ url: deployments_url }));
 
 		waitForCompletion(function () {
-			if (proxies.length <= 0) {
-				grunt.log.ok("No proxies found");
+			if (deployment_count <= 0) {
+				grunt.log.ok("No deployed proxies found");
 			}
 			else {
 				if (proxy_count) {
-					grunt.log.ok(`Undeployed  ${proxy_count} proxies`);
+					grunt.log.ok(`Undeployed ${proxy_count} proxies`);
 				}
 				if (proxy_err_count) {
 					grunt.log.error(`Failed to undeploy ${proxy_err_count} proxies`);
