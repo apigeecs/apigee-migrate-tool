@@ -5,6 +5,9 @@ const path = require('path');
 const apigee = require('../config.js');
 const asyncrequest = require('../util/asyncrequest.lib.js');
 const iterators = require('../util/iterators.lib.js');
+const apigeeOrg = require('../util/org.lib.js');
+
+const company_lastname = "ConvertedCompany";
 
 module.exports = function (grunt) {
 	grunt.registerTask('exportCompanies', 'Export all companies from org ' + apigee.from.org + " [" + apigee.from.version + "]", function () {
@@ -33,11 +36,28 @@ module.exports = function (grunt) {
 					++company_count;
 
 					grunt.verbose.writeln(company_body);
-					let company_detail = JSON.parse(company_body);
+					const company_detail = JSON.parse(company_body);
 
-					let company_file = path.join(filepath, company_detail.name);
+					const company_folder = path.join(filepath, company_detail.name);
+					grunt.file.mkdir(company_folder);
+
+					const company_file = path.join(company_folder, "company");
 					grunt.file.write(company_file, company_body);
-					grunt.verbose.writeln('Company ' + company_detail.name + ' written!');
+
+					const devs_url = company_url + "/developers";
+					grunt.verbose.writeln("getting developers for company: " + devs_url);
+					waitForGet(devs_url, function (devs_error, devs_response, devs_body) {
+						if (!devs_error && devs_response.statusCode == 200) {
+							const devs_file = path.join(company_folder, "developers");
+							grunt.file.write(devs_file, devs_body);
+						}
+						else {
+							if (devs_error)
+								grunt.log.error(devs_error);
+							else
+								grunt.log.error(devs_body);
+						}
+					});
 				}
 				else {
 					if (company_error)
@@ -64,107 +84,257 @@ module.exports = function (grunt) {
 		});
 	});
 
-
 	grunt.registerMultiTask('importCompanies', 'Import all companies to org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
-		let url = apigee.to.url;
-		let org = apigee.to.org;
-		let userid = apigee.to.userid;
-		let passwd = apigee.to.passwd;
 		let files = this.filesSrc;
-		let company_count = 0;
 		let done = this.async();
 
-		const { waitForPost, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+		const { useCompanyApps } = apigeeOrg(grunt, apigee.to);
 
-		let f = grunt.option('src');
-		if (f) {
-			let opts = { flatten: false };
+		useCompanyApps(function (use_company_apps) {
+			let url = apigee.to.url;
+			let org = apigee.to.org;
+			let userid = apigee.to.userid;
+			let passwd = apigee.to.passwd;
+			let company_count = 0;
+			let company_err_count = 0;
 
-			grunt.verbose.writeln('src pattern = ' + f);
-			files = grunt.file.expand(opts, f);
-		}
+			const { waitForPost, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
-		const companies_url = url + "/v1/organizations/" + org + "/companies";
+			let f = grunt.option('src');
+			if (f) {
+				let opts = { flatten: false };
 
-		files.forEach(function (filepath) {
-			let content = grunt.file.read(filepath);
+				grunt.verbose.writeln('src pattern = ' + f);
+				files = grunt.file.expand(opts, f);
+			}
 
-			waitForPost(companies_url, {
-				headers: { 'Content-Type': 'application/json' },
-				body: content
-			}, function (error, response, body) {
-				let status = 999;
-				if (response)
-					status = response.statusCode;
+			if (use_company_apps) {
+				const companies_url = url + "/v1/organizations/" + org + "/companies";
 
-				if (!error && status == 201) {
-					grunt.verbose.writeln('Resp [' + status + '] for company creation ' + this.url + ' -> ' + body);
-					++company_count;
-				}
-				else {
-					if (error) {
-						grunt.log.error(error);
+				files.forEach(function (filepath) {
+					const company_file = path.join(filepath, "company");
+					const content = grunt.file.read(company_file);
+
+					waitForPost(companies_url, {
+						headers: { 'Content-Type': 'application/json' },
+						body: content
+					}, function (error, response, body) {
+						let status = 999;
+						if (response)
+							status = response.statusCode;
+
+						if (!error && status == 201) {
+							grunt.verbose.writeln('Resp [' + status + '] for company creation ' + this.url + ' -> ' + body);
+							++company_count;
+						}
+						else {
+							++company_err_count;
+							if (error) {
+								grunt.log.error(error);
+							}
+
+							grunt.verbose.error('ERROR Resp [' + status + '] for company creation ' + this.url + ' -> ' + body);
+						}
+					}.bind({ url: companies_url }));
+				});
+			}
+			else {
+				grunt.log.writeln("Target org does not support company apps; converting companies to developers");
+				const developers_url = url + "/v1/organizations/" + org + "/developers";
+
+				files.forEach(function (filepath) {
+					const company_file = path.join(filepath, "company");
+					const devs_file = path.join(filepath, "developers");
+
+					const company_details = grunt.file.readJSON(company_file);
+					const company_devs = grunt.file.readJSON(devs_file);
+					const company_name = company_details.name;
+
+					if (company_devs && company_devs.developer && company_devs.developer.length > 0) {
+						const dev_email = company_devs.developer[0].email;
+						grunt.log.writeln(`Converting company ${company_name} to developer ${dev_email}`);
+
+						dev_details = {
+							email: dev_email,
+							username: dev_email,
+							firstName: company_details.displayName,
+							lastName: company_lastname,
+							status: company_details.status,
+							attributes: company_details.attributes
+						};
+
+						waitForPost(developers_url, {
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify(dev_details)
+						}, function (error, response, body) {
+							let status = 999;
+							if (response)
+								status = response.statusCode;
+
+							if (!error && status == 201) {
+								grunt.verbose.writeln('Resp [' + status + '] for developer creation ' + this.url + ' -> ' + body);
+								++company_count;
+							}
+							else {
+								++company_err_count;
+								if (error) {
+									grunt.log.error(error);
+								}
+
+								grunt.verbose.error('ERROR Resp [' + status + '] for developer creation ' + this.url + ' -> ' + body);
+							}
+						}.bind({ url: developers_url }));
 					}
+					else {
+						++company_err_count;
+						grunt.log.error(`No developers for company ${company_name}`);
+					}
+				});
+			}
 
-					grunt.verbose.error('ERROR Resp [' + status + '] for company creation ' + this.url + ' -> ' + body);
+			waitForCompletion(function () {
+				if (company_count) {
+					grunt.log.ok(`Imported ${company_count} companies`);
 				}
-			}.bind({ url: companies_url }));
-		});
+				if (company_err_count) {
+					grunt.log.error(`Failed to import ${company_err_count} companies`);
+				}
 
-		waitForCompletion(function () {
-			grunt.log.ok('Imported ' + company_count + ' companies');
-			done();
+				done();
+			});
 		});
 	});
 
 	grunt.registerMultiTask('deleteCompanies', 'Delete all companies from org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
-		let url = apigee.to.url;
-		let org = apigee.to.org;
-		let userid = apigee.to.userid;
-		let passwd = apigee.to.passwd;
 		let files = this.filesSrc;
-		let company_count = 0;
 		let done = this.async();
 
-		const { waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+		const { useCompanyApps } = apigeeOrg(grunt, apigee.to);
 
-		let f = grunt.option('src');
-		if (f) {
-			let opts = { flatten: false };
+		useCompanyApps(function (use_company_apps) {
+			let url = apigee.to.url;
+			let org = apigee.to.org;
+			let userid = apigee.to.userid;
+			let passwd = apigee.to.passwd;
+			let company_count = 0;
+			let company_skip_count = 0;
+			let company_err_count = 0;
 
-			grunt.verbose.writeln('src pattern = ' + f);
-			files = grunt.file.expand(opts, f);
-		}
+			const { waitForGet, waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
-		const companies_url = url + "/v1/organizations/" + org + "/companies";
+			let f = grunt.option('src');
+			if (f) {
+				let opts = { flatten: false };
 
-		files.forEach(function (filepath) {
-			let content = grunt.file.read(filepath);
-			let company_detail = JSON.parse(content);
+				grunt.verbose.writeln('src pattern = ' + f);
+				files = grunt.file.expand(opts, f);
+			}
 
-			const del_url = companies_url + "/" + encodeURIComponent(company_detail.name);
-			grunt.verbose.writeln(del_url);
+			if (use_company_apps) {
+				const companies_url = url + "/v1/organizations/" + org + "/companies";
 
-			waitForDelete(del_url, function (error, response, body) {
-				let status = 999;
-				if (response)
-					status = response.statusCode;
+				files.forEach(function (filepath) {
+					const company_file = path.join(filepath, "company");
+					const company_detail = grunt.file.readJSON(company_file);
 
-				if (!error && status == 200) {
-					grunt.verbose.writeln('Resp [' + status + '] for dev deletion ' + this.url + ' -> ' + body);
-					++company_count;
-				}
-				else {
-					if (error) {
-						grunt.log.error(error);
+					const del_url = companies_url + "/" + encodeURIComponent(company_detail.name);
+					grunt.verbose.writeln(del_url);
+
+					waitForDelete(del_url, function (error, response, body) {
+						let status = 999;
+						if (response)
+							status = response.statusCode;
+
+						if (!error && status == 200) {
+							grunt.verbose.writeln('Resp [' + status + '] for company deletion ' + this.url + ' -> ' + body);
+							++company_count;
+						}
+						else {
+							++company_err_count;
+							if (error) {
+								grunt.log.error(error);
+							}
+
+							grunt.verbose.error('ERROR Resp [' + status + '] for company deletion ' + this.url + ' -> ' + body);
+						}
+					}.bind({ url: del_url }));
+				});
+			}
+			else {
+				grunt.log.writeln("Target org does not support company apps; deleting converted company developers");
+				const developers_url = url + "/v1/organizations/" + org + "/developers";
+
+				files.forEach(function (filepath) {
+					const company_file = path.join(filepath, "company");
+					const devs_file = path.join(filepath, "developers");
+
+					const company_details = grunt.file.readJSON(company_file);
+					const company_devs = grunt.file.readJSON(devs_file);
+					const company_name = company_details.name;
+
+					if (company_devs && company_devs.developer && company_devs.developer.length > 0) {
+						const dev_email = company_devs.developer[0].email;
+						grunt.verbose.writeln(`Looking for company ${company_name} as developer ${dev_email}`);
+
+						const dev_url = developers_url + "/" + encodeURIComponent(dev_email);
+						grunt.verbose.writeln(dev_url);
+
+						// Check if this developer is actually a converted company
+						waitForGet(dev_url, function (error, response, body) {
+							let status = 999;
+							if (response)
+								status = response.statusCode;
+
+							if (!error && status == 200) {
+								const dev_detail = JSON.parse(body);
+
+								if (dev_detail.lastName == company_lastname) {
+									grunt.log.writeln(`Deleting company ${this.company_name} as developer ${this.dev_email}`);
+
+									waitForDelete(this.url, function (error, response, body) {
+										let dstatus = 999;
+										if (response)
+											dstatus = response.statusCode;
+
+										if (!error && dstatus == 200) {
+											grunt.verbose.writeln('Resp [' + dstatus + '] for company developer deletion ' + this.url + ' -> ' + body);
+											++company_count;
+										}
+										else {
+											++company_err_count;
+											if (error) {
+												grunt.log.error(error);
+											}
+
+											grunt.verbose.error('ERROR Resp [' + dstatus + '] for company developer deletion ' + this.url + ' -> ' + body);
+										}
+									}.bind({ url: this.url }));
+								}
+								else {
+									++company_skip_count;
+									grunt.verbose.writeln(`Developer ${this.dev_email} does not seem to be a converted company`);
+								}
+							}
+						}.bind({ company_name: company_name, dev_email: dev_email, url: dev_url }));
 					}
-
-					grunt.verbose.error('ERROR Resp [' + status + '] for dev deletion ' + this.url + ' -> ' + body);
-				}
-			}.bind({ url: del_url }));
+					else {
+						++company_err_count;
+						grunt.log.error(`No developers for company ${company_name}`);
+					}
+				});
+			}
 
 			waitForCompletion(function () {
-				grunt.log.ok('Deleted ' + company_count + ' companies');
+				if (company_count) {
+					grunt.log.ok(`Deleted ${company_count} company developers`);
+				}
+				if (company_skip_count) {
+					grunt.log.ok(`Skipped ${company_skip_count} non-company developers`);
+				}
+				if (company_err_count) {
+					grunt.log.error(`Failed to delete ${company_err_count} company developers`);
+				}
+
 				done();
 			});
 		});

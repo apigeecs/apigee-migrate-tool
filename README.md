@@ -35,6 +35,8 @@ You can also import the following kinds of data from a CSV file to an Apigee org
   - app Keys
   - KVMs (org and env)
 
+Note that if the target organization does not have monetization enabled, companies and company apps will be automatically converted to developers and developer apps. The ``--use-companies`` option may be used to force companies and company apps to be created anyway.
+
 ## Data not migrated
 
 **Please note** that the following entities won't be migrated as part of this tool. In most cases, you'll need to migrate these manually using the Apigee Edge console. For more on migrating these, see the Apigee [documentation on org data migration](https://docs.apigee.com/api-services/content/migrating-data-apigee-trial-org).

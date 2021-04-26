@@ -62,7 +62,7 @@ module.exports = function (grunt, userid, passwd) {
 				clearInterval(intervalId);
 			}
 			else {
-				grunt.verbose.writeln('Waiting for ' + pending_tasks + ' pending requests');
+				grunt.verbose.writeln(`Waiting for ${pending_tasks} pending requests`);
 			}
 		}, 1000);
 	}
