@@ -186,7 +186,9 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['availabletasks']);
   grunt.registerTask('deleteAll', ['warn', 'deleteApps', 'deleteDevs', 'deleteCompanies', 'deleteProducts', 'deleteProxies', 'deleteFlowHooks', 'deleteSharedFlows', 'deleteTargetServers', 'deleteVirtualHosts', 'deleteEnvKVM', 'deleteOrgKVM', 'deleteProxyKVM', 'deleteKeys', 'deleteReports', 'deleteCaches', 'deleteReferences', 'deleteKeyStores']);
   grunt.registerTask('exportAll', ['exportDevs', 'exportCompanies', 'exportProducts', 'exportApps', 'exportProxies', 'exportSharedFlows', 'exportFlowHooks', 'exportTargetServers', 'exportProxyKVM', 'exportEnvKVM', 'exportOrgKVM', 'exportReports', 'exportKeyStores', 'exportReferences', 'exportVirtualHosts', 'exportCaches', 'exportAllSpecs']);
+  grunt.registerTask('exportEnv', `Export only environment-specific data from ${apigee.from.org} environment ${apigee.from.env}`, ['exportFlowHooks', 'exportTargetServers', 'exportEnvKVM', 'exportKeyStores', 'exportReferences', 'exportVirtualHosts', 'exportCaches']);
   grunt.registerTask('importAll', ['importKeyStores', 'importReferences', 'importCaches', 'importTargetServers', 'importVirtualHosts', 'importAllSpecs', 'importProducts', 'importDevs', 'importCompanies', 'importApps', 'importKeys', 'importProxies', 'importSharedFlows','importFlowHooks', 'importOrgKVM', 'importEnvKVM', 'importProxyKVM', 'importReports']);
+  grunt.registerTask('importEnv', `Import only environment-specific data to ${apigee.to.org} environment ${apigee.to.env}`, ['importKeyStores', 'importReferences', 'importCaches', 'importTargetServers', 'importVirtualHosts', 'importFlowHooks', 'importEnvKVM']);
   grunt.registerTask('tasks', ['availabletasks']);
   grunt.registerTask('warn', 'Display Warning', function() {
       var readline = require('readline');
