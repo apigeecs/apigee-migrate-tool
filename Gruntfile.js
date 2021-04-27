@@ -72,31 +72,31 @@ module.exports = function(grunt) {
        src: './data/flowhooks/flow_hook_config'
     },
     importProducts: {
-        src: 'data/products/*'
+        src: './data/products/*'
     },
     importDevs: {
-        src: 'data/devs/*'
+        src: './data/devs/*'
     },
     importCompanies: {
-        src: 'data/companies/*'
+        src: './data/companies/*'
     },
     importApps: {
-        src: 'data/apps/*/*/*'
+        src: './data/apps/*/*/*'
     },
     importKeys: {
-        src: 'data/apps/*/*/*'
+        src: './data/apps/*/*/*'
     },
     importTargetServers: {
-        src: 'data/targetservers/*'
+        src: './data/targetservers/*'
     },
     importOrgKVM: {
-        src: 'data/kvm/org/*'
+        src: './data/kvm/org/*'
     },
     importEnvKVM: {
-        src: 'data/kvm/env/*/*'
+        src: './data/kvm/env/*/*'
     },
     importProxyKVM: {
-        src: 'data/kvm/proxy/*/*'
+        src: './data/kvm/proxy/*/*'
     },
     importReports: {
         src: './data/reports/*'
@@ -117,13 +117,13 @@ module.exports = function(grunt) {
         src: './data/caches/*'
     },
     deleteKeys: {
-        src: 'data/apps/*/*/*'
+        src: './data/apps/*/*/*'
     },
     deleteApps: {
-        src: 'data/apps/*/*/*'
+        src: './data/apps/*/*/*'
     },
     deleteProducts: {
-        src: 'data/products/*'
+        src: './data/products/*'
     },
     deleteDevs: {
         src: './data/devs/*'
