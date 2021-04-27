@@ -1,5 +1,7 @@
 'use strict';
 
+const path = require('path');
+
 module.exports = function (grunt, companies_folder) {
 
 	const mapCompanyToDeveloper = function (company) {
