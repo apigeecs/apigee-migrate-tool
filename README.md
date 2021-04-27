@@ -15,19 +15,22 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 ## Data migrated
 
 With the tool, you can import and export data about:
-- developers
-- proxies (latest version)
-- shared flows
-- flow hooks
-- products
-- apps
-- app keys
-- KVMs (org and env)
+- Developers
+- Companies
+- Proxies (latest version)
+- API products
+- Shared flows
+- Flow hooks
+- Products
+- Apps
+- App keys
+- KVMs (org and env. Note that encrypted KVM values cannot be exported.)
 - Reports
 - Spec store (Not available on-premises. Spec store APIs are in experimental status, so may change in the future)
-- Target Servers
-- Virtual Hosts
-- TLS Key Stores
+- Target servers
+- Virtual hosts
+- TLS key stores and references (Certificate keys cannot be exported. Certificates are exported but not imported.)
+- Caches
 
 You can also import the following kinds of data from a CSV file to an Apigee org:
   - developers
@@ -35,7 +38,7 @@ You can also import the following kinds of data from a CSV file to an Apigee org
   - app Keys
   - KVMs (org and env)
 
-Note that if the target organization does not have monetization enabled, companies and company apps will be automatically converted to developers and developer apps. The ``--use-companies`` option may be used to force companies and company apps to be created anyway.
+Note that companies and company apps will only be exported if the source organization supports monetization. If the target organization does not have monetization enabled, companies and company apps will be automatically converted to developers and developer apps. The ``--use-companies`` option may be used to force the processing of companies and company apps when exporting, importing and deleting.
 
 ## Data not migrated
 

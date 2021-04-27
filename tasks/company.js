@@ -8,80 +8,90 @@ const iterators = require('../util/iterators.lib.js');
 const apigeeOrg = require('../util/org.lib.js');
 const apigeeCompany = require('../util/company.lib.js');
 
-const company_lastname = "ConvertedCompany";
+const company_lastname = "ConvertedCompany"; // Last name for developers created from companies
 
 module.exports = function (grunt) {
 	grunt.registerTask('exportCompanies', 'Export all companies from org ' + apigee.from.org + " [" + apigee.from.version + "]", function () {
-		const url = apigee.from.url;
-		const org = apigee.from.org;
-		const userid = apigee.from.userid;
-		const passwd = apigee.from.passwd;
-		const filepath = grunt.config.get("exportCompanies.dest.data");
-		let company_count = 0;
 		const done = this.async();
 
-		const { iterateOverCompanies } = iterators(grunt, apigee);
-		const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+		const { useCompanyApps } = apigeeOrg(grunt, apigee.from);
 
-		grunt.verbose.writeln("========================= export Companies ===========================");
+		useCompanyApps(function (use_company_apps) {
+			const filepath = grunt.config.get("exportCompanies.dest.data");
+			const url = apigee.from.url;
+			const org = apigee.from.org;
+			const userid = apigee.from.userid;
+			const passwd = apigee.from.passwd;
+			let company_count = 0;
 
-		const companies_url = url + "/v1/organizations/" + org + "/companies";
+			if (use_company_apps) {
+				grunt.verbose.writeln("========================= export Companies ===========================");
 
-		const dumpCompany = function (company) {
-			const company_url = companies_url + "/" + encodeURIComponent(company);
-			grunt.verbose.writeln("getting company: " + company_url);
+				const { iterateOverCompanies } = iterators(grunt, apigee);
+				const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
-			// Retrieve company details
-			waitForGet(company_url, function (company_error, company_response, company_body) {
-				if (!company_error && company_response.statusCode == 200) {
-					++company_count;
+				const companies_url = url + "/v1/organizations/" + org + "/companies";
 
-					grunt.verbose.writeln(company_body);
-					const company_detail = JSON.parse(company_body);
+				const dumpCompany = function (company) {
+					const company_url = companies_url + "/" + encodeURIComponent(company);
+					grunt.verbose.writeln("getting company: " + company_url);
 
-					const company_folder = path.join(filepath, company_detail.name);
-					grunt.file.mkdir(company_folder);
+					// Retrieve company details
+					waitForGet(company_url, function (company_error, company_response, company_body) {
+						if (!company_error && company_response.statusCode == 200) {
+							++company_count;
 
-					const company_file = path.join(company_folder, "company");
-					grunt.file.write(company_file, company_body);
+							grunt.verbose.writeln(company_body);
+							const company_detail = JSON.parse(company_body);
 
-					const devs_url = company_url + "/developers";
-					grunt.verbose.writeln("getting developers for company: " + devs_url);
-					waitForGet(devs_url, function (devs_error, devs_response, devs_body) {
-						if (!devs_error && devs_response.statusCode == 200) {
-							const devs_file = path.join(company_folder, "developers");
-							grunt.file.write(devs_file, devs_body);
+							const company_folder = path.join(filepath, company_detail.name);
+							grunt.file.mkdir(company_folder);
+
+							const company_file = path.join(company_folder, "company");
+							grunt.file.write(company_file, company_body);
+
+							const devs_url = company_url + "/developers";
+							grunt.verbose.writeln("getting developers for company: " + devs_url);
+							waitForGet(devs_url, function (devs_error, devs_response, devs_body) {
+								if (!devs_error && devs_response.statusCode == 200) {
+									const devs_file = path.join(company_folder, "developers");
+									grunt.file.write(devs_file, devs_body);
+								}
+								else {
+									if (devs_error)
+										grunt.log.error(devs_error);
+									else
+										grunt.log.error(devs_body);
+								}
+							});
 						}
 						else {
-							if (devs_error)
-								grunt.log.error(devs_error);
+							if (company_error)
+								grunt.log.error(company_error);
 							else
-								grunt.log.error(devs_body);
+								grunt.log.error(company_body);
 						}
 					});
 				}
-				else {
-					if (company_error)
-						grunt.log.error(company_error);
-					else
-						grunt.log.error(company_body);
-				}
-			});
-		}
 
-		// get All developers
-		iterateOverCompanies(dumpCompany);
+				// get All developers
+				iterateOverCompanies(dumpCompany);
 
-		waitForCompletion(function () {
-			if (company_count <= 0) {
-				grunt.verbose.writeln("No companies");
+				waitForCompletion(function () {
+					if (company_count <= 0) {
+						grunt.verbose.writeln("No companies");
+					}
+					else {
+						grunt.log.ok('Exported ' + company_count + ' companies');
+					}
+					grunt.verbose.writeln("================== export Companies DONE()");
+
+					done();
+				});
 			}
 			else {
-				grunt.log.ok('Exported ' + company_count + ' companies');
+				grunt.log.writeln(`Source org does not support company apps - skipping company export`);
 			}
-			grunt.verbose.writeln("================== export Companies DONE()");
-
-			done();
 		});
 	});
 

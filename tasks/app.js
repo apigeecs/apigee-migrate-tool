@@ -10,154 +10,164 @@ const apigeeCompany = require('../util/company.lib.js');
 
 module.exports = function (grunt) {
 	grunt.registerTask('exportApps', 'Export all apps from org ' + apigee.from.org + " [" + apigee.from.version + "]", function () {
-		const url = apigee.from.url;
-		const org = apigee.from.org;
-		const userid = apigee.from.userid;
-		const passwd = apigee.from.passwd;
-		const filepath = grunt.config.get("exportApps.dest.data");
-		let dev_count = 0;
-		let company_count = 0;
-		let total_apps = 0;
 		const done = this.async();
 
-		const { iterateOverDevs, iterateOverCompanies } = iterators(grunt, apigee);
-		const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+		const { useCompanyApps } = apigeeOrg(grunt, apigee.from);
 
-		grunt.verbose.writeln("========================= export Apps ===========================");
+		useCompanyApps(function (use_company_apps) {
+			const url = apigee.from.url;
+			const org = apigee.from.org;
+			const userid = apigee.from.userid;
+			const passwd = apigee.from.passwd;
+			const filepath = grunt.config.get("exportApps.dest.data");
+			let dev_count = 0;
+			let company_count = 0;
+			let total_apps = 0;
 
-		const developers_url = url + "/v1/organizations/" + org + "/developers";
-		const companies_url = url + "/v1/organizations/" + org + "/companies";
+			const { iterateOverDevs, iterateOverCompanies } = iterators(grunt, apigee);
+			const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
-		const dumpDeveloperApps = function (email) {
-			let dev_url = developers_url + "/" + encodeURIComponent(email);
+			grunt.verbose.writeln("========================= export Apps ===========================");
 
-			// Retrieve developer details
-			waitForGet(dev_url, function (dev_error, dev_response, dev_body) {
-				if (!dev_error && dev_response.statusCode == 200) {
-					++dev_count;
+			const developers_url = url + "/v1/organizations/" + org + "/developers";
+			const companies_url = url + "/v1/organizations/" + org + "/companies";
 
-					let dev_detail = JSON.parse(dev_body);
-					let dev_folder = path.join(filepath, "developers", dev_detail.email);
-					grunt.file.mkdir(dev_folder);
+			const dumpDeveloperApps = function (email) {
+				let dev_url = developers_url + "/" + encodeURIComponent(email);
 
-					//Get developer Apps
-					let apps_url = developers_url + "/" + encodeURIComponent(dev_detail.email) + "/apps?expand=true";
-					grunt.verbose.writeln(apps_url);
+				// Retrieve developer details
+				waitForGet(dev_url, function (dev_error, dev_response, dev_body) {
+					if (!dev_error && dev_response.statusCode == 200) {
+						++dev_count;
 
-					waitForGet(apps_url, function (app_error, app_response, app_body) {
-						if (!app_error && app_response.statusCode == 200) {
-							let apps_detail = JSON.parse(app_body);
-							let apps = apps_detail.app;
+						let dev_detail = JSON.parse(dev_body);
+						let dev_folder = path.join(filepath, "developers", dev_detail.email);
+						grunt.file.mkdir(dev_folder);
 
-							if (apps) {
-								for (let j = 0; j < apps.length; j++) {
-									let app = apps[j];
-									let file_name = path.join(dev_folder, app.name);
+						//Get developer Apps
+						let apps_url = developers_url + "/" + encodeURIComponent(dev_detail.email) + "/apps?expand=true";
+						grunt.verbose.writeln(apps_url);
 
-									grunt.file.write(file_name, JSON.stringify(app));
-									grunt.verbose.writeln('App ' + dev_detail.email + ' / ' + app.name + ' written!');
-								};
-							}
-							total_apps += apps.length;
+						waitForGet(apps_url, function (app_error, app_response, app_body) {
+							if (!app_error && app_response.statusCode == 200) {
+								let apps_detail = JSON.parse(app_body);
+								let apps = apps_detail.app;
 
-							if (apps.length > 0) {
-								grunt.log.ok('Retrieved ' + apps.length + ' apps for ' + dev_detail.email);
-							}
-							else {
-								grunt.verbose.writeln('Retrieved ' + apps.length + ' apps for ' + dev_detail.email);
-							}
-						}
-						else {
-							grunt.log.error('Error retrieving apps for developer ' + dev_detail.email);
+								if (apps) {
+									for (let j = 0; j < apps.length; j++) {
+										let app = apps[j];
+										let file_name = path.join(dev_folder, app.name);
 
-							if (error) {
-								grunt.log.error(error);
-							}
-						}
-					});
-				}
-				else {
-					if (dev_error)
-						grunt.log.error(dev_error);
-					else
-						grunt.log.error(dev_body);
-				}
-			});
-			// End Developer details
-		}
+										grunt.file.write(file_name, JSON.stringify(app));
+										grunt.verbose.writeln('App ' + dev_detail.email + ' / ' + app.name + ' written!');
+									};
+								}
+								total_apps += apps.length;
 
-		const dumpCompanyApps = function (company) {
-			let company_url = companies_url + '/' + encodeURIComponent(company);
-
-			// Retrieve company details
-			waitForGet(company_url, function (company_error, company_response, company_body) {
-				if (!company_error && company_response.statusCode == 200) {
-					++company_count;
-
-					let company_detail = JSON.parse(company_body);
-					let company_folder = path.join(filepath, "companies", company_detail.name);
-					grunt.file.mkdir(company_folder);
-
-					//Get company Apps
-					let apps_url = companies_url + "/" + encodeURIComponent(company_detail.name) + "/apps?expand=true";
-					grunt.verbose.writeln(apps_url);
-
-					waitForGet(apps_url, function (app_error, app_response, app_body) {
-						if (!app_error && app_response.statusCode == 200) {
-							let apps_detail = JSON.parse(app_body);
-							let apps = apps_detail.app;
-
-							if (apps) {
-								for (let j = 0; j < apps.length; j++) {
-									let app = apps[j];
-									let file_name = path.join(company_folder, app.name);
-
-									grunt.file.write(file_name, JSON.stringify(app));
-									grunt.verbose.writeln('App ' + company_detail.name + ' / ' + app.name + ' written!');
-								};
-							}
-							total_apps += apps.length;
-
-							if (apps.length > 0) {
-								grunt.log.ok('Retrieved ' + apps.length + ' apps for ' + company_detail.name);
+								if (apps.length > 0) {
+									grunt.log.ok('Retrieved ' + apps.length + ' apps for ' + dev_detail.email);
+								}
+								else {
+									grunt.verbose.writeln('Retrieved ' + apps.length + ' apps for ' + dev_detail.email);
+								}
 							}
 							else {
-								grunt.verbose.writeln('Retrieved ' + apps.length + ' apps for ' + company_detail.name);
+								grunt.log.error('Error retrieving apps for developer ' + dev_detail.email);
+
+								if (error) {
+									grunt.log.error(error);
+								}
 							}
+						});
+					}
+					else {
+						if (dev_error)
+							grunt.log.error(dev_error);
+						else
+							grunt.log.error(dev_body);
+					}
+				});
+				// End Developer details
+			}
 
-						}
-						else {
-							grunt.log.error('Error retrieving apps for company ' + company_detail.name);
+			const dumpCompanyApps = function (company) {
+				let company_url = companies_url + '/' + encodeURIComponent(company);
 
-							if (error) {
-								grunt.log.error(error);
+				// Retrieve company details
+				waitForGet(company_url, function (company_error, company_response, company_body) {
+					if (!company_error && company_response.statusCode == 200) {
+						++company_count;
+
+						let company_detail = JSON.parse(company_body);
+						let company_folder = path.join(filepath, "companies", company_detail.name);
+						grunt.file.mkdir(company_folder);
+
+						//Get company Apps
+						let apps_url = companies_url + "/" + encodeURIComponent(company_detail.name) + "/apps?expand=true";
+						grunt.verbose.writeln(apps_url);
+
+						waitForGet(apps_url, function (app_error, app_response, app_body) {
+							if (!app_error && app_response.statusCode == 200) {
+								let apps_detail = JSON.parse(app_body);
+								let apps = apps_detail.app;
+
+								if (apps) {
+									for (let j = 0; j < apps.length; j++) {
+										let app = apps[j];
+										let file_name = path.join(company_folder, app.name);
+
+										grunt.file.write(file_name, JSON.stringify(app));
+										grunt.verbose.writeln('App ' + company_detail.name + ' / ' + app.name + ' written!');
+									};
+								}
+								total_apps += apps.length;
+
+								if (apps.length > 0) {
+									grunt.log.ok('Retrieved ' + apps.length + ' apps for ' + company_detail.name);
+								}
+								else {
+									grunt.verbose.writeln('Retrieved ' + apps.length + ' apps for ' + company_detail.name);
+								}
+
 							}
-						}
-					});
-				}
-				else {
-					if (company_error)
-						grunt.log.error(company_error);
-					else
-						grunt.log.error(company_body);
-				}
-			});
-		}
+							else {
+								grunt.log.error('Error retrieving apps for company ' + company_detail.name);
 
-		iterateOverDevs(dumpDeveloperApps);
+								if (error) {
+									grunt.log.error(error);
+								}
+							}
+						});
+					}
+					else {
+						if (company_error)
+							grunt.log.error(company_error);
+						else
+							grunt.log.error(company_body);
+					}
+				});
+			}
 
-		iterateOverCompanies(dumpCompanyApps);
+			iterateOverDevs(dumpDeveloperApps);
 
-		waitForCompletion(function () {
-			if (total_apps <= 0) {
-				grunt.verbose.writeln("No Apps");
+			if (use_company_apps) {
+				iterateOverCompanies(dumpCompanyApps);
 			}
 			else {
-				grunt.log.ok('Exported ' + total_apps + ' apps for ' + dev_count + ' developers and ' + company_count + ' companies');
+				grunt.log.writeln(`Source org does not support company apps - skipping company app export`);
 			}
-			grunt.verbose.writeln("================== export apps DONE()");
 
-			done();
+			waitForCompletion(function () {
+				if (total_apps <= 0) {
+					grunt.verbose.writeln("No Apps");
+				}
+				else {
+					grunt.log.ok('Exported ' + total_apps + ' apps for ' + dev_count + ' developers and ' + company_count + ' companies');
+				}
+				grunt.verbose.writeln("================== export apps DONE()");
+
+				done();
+			});
 		});
 	});
 
