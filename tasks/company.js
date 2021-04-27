@@ -11,13 +11,13 @@ const company_lastname = "ConvertedCompany";
 
 module.exports = function (grunt) {
 	grunt.registerTask('exportCompanies', 'Export all companies from org ' + apigee.from.org + " [" + apigee.from.version + "]", function () {
-		let url = apigee.from.url;
-		let org = apigee.from.org;
-		let userid = apigee.from.userid;
-		let passwd = apigee.from.passwd;
-		let filepath = grunt.config.get("exportCompanies.dest.data");
+		const url = apigee.from.url;
+		const org = apigee.from.org;
+		const userid = apigee.from.userid;
+		const passwd = apigee.from.passwd;
+		const filepath = grunt.config.get("exportCompanies.dest.data");
 		let company_count = 0;
-		let done = this.async();
+		const done = this.async();
 
 		const { iterateOverCompanies } = iterators(grunt, apigee);
 		const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
@@ -86,15 +86,15 @@ module.exports = function (grunt) {
 
 	grunt.registerMultiTask('importCompanies', 'Import all companies to org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
 		let files = this.filesSrc;
-		let done = this.async();
+		const done = this.async();
 
 		const { useCompanyApps } = apigeeOrg(grunt, apigee.to);
 
 		useCompanyApps(function (use_company_apps) {
-			let url = apigee.to.url;
-			let org = apigee.to.org;
-			let userid = apigee.to.userid;
-			let passwd = apigee.to.passwd;
+			const url = apigee.to.url;
+			const org = apigee.to.org;
+			const userid = apigee.to.userid;
+			const passwd = apigee.to.passwd;
 			let company_count = 0;
 			let company_err_count = 0;
 
@@ -154,7 +154,7 @@ module.exports = function (grunt) {
 						const dev_email = company_devs.developer[0].email;
 						grunt.log.writeln(`Converting company ${company_name} to developer ${dev_email}`);
 
-						dev_details = {
+						let dev_details = {
 							email: dev_email,
 							username: dev_email,
 							firstName: company_details.displayName,
@@ -207,15 +207,15 @@ module.exports = function (grunt) {
 
 	grunt.registerMultiTask('deleteCompanies', 'Delete all companies from org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
 		let files = this.filesSrc;
-		let done = this.async();
+		const done = this.async();
 
 		const { useCompanyApps } = apigeeOrg(grunt, apigee.to);
 
 		useCompanyApps(function (use_company_apps) {
-			let url = apigee.to.url;
-			let org = apigee.to.org;
-			let userid = apigee.to.userid;
-			let passwd = apigee.to.passwd;
+			const url = apigee.to.url;
+			const org = apigee.to.org;
+			const userid = apigee.to.userid;
+			const passwd = apigee.to.passwd;
 			let company_count = 0;
 			let company_skip_count = 0;
 			let company_err_count = 0;
