@@ -6,6 +6,7 @@ const apigee = require('../config.js');
 const asyncrequest = require('../util/asyncrequest.lib.js');
 const iterators = require('../util/iterators.lib.js');
 const apigeeOrg = require('../util/org.lib.js');
+const apigeeCompany = require('../util/company.lib.js');
 
 const company_lastname = "ConvertedCompany";
 
@@ -86,6 +87,7 @@ module.exports = function (grunt) {
 
 	grunt.registerMultiTask('importCompanies', 'Import all companies to org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
 		let files = this.filesSrc;
+		const companies_folder = path.dirname(grunt.config.get("importCompanies.src.data"));
 		const done = this.async();
 
 		const { useCompanyApps } = apigeeOrg(grunt, apigee.to);
@@ -139,19 +141,19 @@ module.exports = function (grunt) {
 				});
 			}
 			else {
+				const { mapCompanyToDeveloper } = apigeeCompany(grunt, companies_folder);
+
 				grunt.log.writeln("Target org does not support company apps; converting companies to developers");
 				const developers_url = url + "/v1/organizations/" + org + "/developers";
 
 				files.forEach(function (filepath) {
 					const company_file = path.join(filepath, "company");
-					const devs_file = path.join(filepath, "developers");
 
 					const company_details = grunt.file.readJSON(company_file);
-					const company_devs = grunt.file.readJSON(devs_file);
 					const company_name = company_details.name;
 
-					if (company_devs && company_devs.developer && company_devs.developer.length > 0) {
-						const dev_email = company_devs.developer[0].email;
+					const dev_email = mapCompanyToDeveloper(company_name);
+					if (dev_email) {
 						grunt.log.writeln(`Converting company ${company_name} to developer ${dev_email}`);
 
 						let dev_details = {
@@ -207,6 +209,7 @@ module.exports = function (grunt) {
 
 	grunt.registerMultiTask('deleteCompanies', 'Delete all companies from org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
 		let files = this.filesSrc;
+		const companies_folder = path.dirname(grunt.config.get("deleteCompanies.src.data"));
 		const done = this.async();
 
 		const { useCompanyApps } = apigeeOrg(grunt, apigee.to);
@@ -261,6 +264,8 @@ module.exports = function (grunt) {
 				});
 			}
 			else {
+				const { mapCompanyToDeveloper } = apigeeCompany(grunt, companies_folder);
+
 				grunt.log.writeln("Target org does not support company apps; deleting converted company developers");
 				const developers_url = url + "/v1/organizations/" + org + "/developers";
 
@@ -269,11 +274,10 @@ module.exports = function (grunt) {
 					const devs_file = path.join(filepath, "developers");
 
 					const company_details = grunt.file.readJSON(company_file);
-					const company_devs = grunt.file.readJSON(devs_file);
 					const company_name = company_details.name;
 
-					if (company_devs && company_devs.developer && company_devs.developer.length > 0) {
-						const dev_email = company_devs.developer[0].email;
+					const dev_email = mapCompanyToDeveloper(company_name);
+					if (dev_email) {
 						grunt.verbose.writeln(`Looking for company ${company_name} as developer ${dev_email}`);
 
 						const dev_url = developers_url + "/" + encodeURIComponent(dev_email);
