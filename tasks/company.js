@@ -168,7 +168,7 @@ module.exports = function (grunt) {
 
 						let dev_details = {
 							email: dev_email,
-							username: dev_email,
+							userName: dev_email,
 							firstName: company_details.displayName,
 							lastName: company_lastname,
 							status: company_details.status,

@@ -452,7 +452,6 @@ module.exports = function (grunt) {
 			const org = apigee.to.org;
 			const userid = apigee.to.userid;
 			const passwd = apigee.to.passwd;
-			let files;
 			let del_count = 0;
 			let del_err_count = 0;
 
