@@ -74,8 +74,8 @@ module.exports = function (grunt) {
 							else {
 								grunt.log.error('Error retrieving apps for developer ' + dev_detail.email);
 
-								if (error) {
-									grunt.log.error(error);
+								if (app_error) {
+									grunt.log.error(app_error);
 								}
 							}
 						});
@@ -133,8 +133,8 @@ module.exports = function (grunt) {
 							else {
 								grunt.log.error('Error retrieving apps for company ' + company_detail.name);
 
-								if (error) {
-									grunt.log.error(error);
+								if (app_error) {
+									grunt.log.error(app_error);
 								}
 							}
 						});
