@@ -26,7 +26,8 @@ module.exports = function (grunt) {
 			let key_del_err_count = 0;
 			let key_exists_count = 0;
 			let prod_err_count = 0;
-			let approve_err_count = 0;
+			let status_count = 0;
+			let status_err_count = 0;
 
 			const { waitForGet, waitForPost, waitForDelete, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 			const { mapCompanyToDeveloper } = apigeeCompany(grunt, companies_folder);
@@ -67,31 +68,11 @@ module.exports = function (grunt) {
 									status = response.statusCode;
 
 								if (!error && status == 200) {
-									grunt.verbose.writeln('Resp [' + status + '] for ' + this.owner + ' - ' + this.appname + ' - ' + this.products + ' - ' + this.cKey + ' product assignment -> ' + body);
+									grunt.verbose.writeln('Resp [' + status + '] for ' + this.owner + ' - ' + this.appname + ' - ' + this.products_payload + ' - ' + this.cKey + ' product assignment -> ' + body);
 
 									// Approve products for key
-									for (let k = 0; k < this.prods.length; k++) {
-										const approve_key_url = this.key_url + "/apiproducts/" + encodeURIComponent(this.prods[k]) + "?action=approve";
-										grunt.verbose.writeln("Approving product for key - " + approve_key_url);
-
-										waitForPost(approve_key_url, {}, function (error, response, body) {
-											let status = 999;
-											if (response)
-												status = response.statusCode;
-
-											if (!error && status == 204) {
-												grunt.verbose.writeln('Resp [' + status + '] for ' + this.owner + ' - ' + this.appname + ' - ' + this.product + ' - ' + this.cKey + ' - ' + this.url + ' -> ' + body);
-											}
-											else {
-												// Failed to approve product for key
-												++approve_err_count;
-												grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.owner + ' - ' + this.appname + ' - ' + this.product + ' - ' + this.cKey + ' - ' + this.url + ' -> ' + body);
-
-												if (error) {
-													grunt.verbose.error(error);
-												}
-											}
-										}.bind({ url: approve_key_url, owner: this.owner, cKey: cKey, appname: this.appname, product: this.prods[k] }));
+									for (let k = 0; k < this.products.length; k++) {
+										setKeyProductStatus(this.key_url, this.products[k].apiproduct, this.products[k].status);
 									}
 								}
 								else {
@@ -103,7 +84,7 @@ module.exports = function (grunt) {
 										grunt.verbose.error(error);
 									}
 								}
-							}.bind({ url: this.key_url, owner: this.owner, cKey: this.cKey, appname: this.appname, products: JSON.stringify(products_payload), prods: prods, key_url: this.key_url }));
+							}.bind({ url: this.key_url, owner: this.owner, cKey: this.cKey, appname: this.appname, products_payload: JSON.stringify(products_payload), key_url: this.key_url, products: this.products }));
 						}
 					}
 					else {
@@ -116,6 +97,50 @@ module.exports = function (grunt) {
 						}
 					}
 				}.bind({ url: create_key_url, owner: owner, appname: appname, cKey: cKey, products: products, key_url: key_url }));
+			};
+
+			const setKeyProductStatus = function (key_url, product, action = "approve") {
+				let approve_key_url = key_url + "/apiproducts/" + encodeURIComponent(product) + "?action=";
+
+				switch (action) {
+					case "approve":
+					case "approved":
+						approve_key_url += "approve";
+						grunt.verbose.writeln("Approving product for key - " + approve_key_url);
+						break;
+
+					case "revoke":
+					case "revoked":
+						approve_key_url += "revoke";
+						grunt.verbose.writeln("Revoking product for key - " + approve_key_url);
+						break;
+
+					default:
+						grunt.verbose.error(`Unknown action ${action} for key - ${approve_key_url}`);
+						return;
+				}
+
+				waitForPost(approve_key_url, {
+					headers: { 'Content-Type': 'application/octet-stream' }
+				}, function (error, response, body) {
+					let status = 999;
+					if (response)
+						status = response.statusCode;
+
+					if (!error && status == 204) {
+						++status_count;
+						grunt.verbose.writeln('Resp [' + status + '] for ' + this.url + ' -> ' + body);
+					}
+					else {
+						// Failed to approve product for key
+						++status_err_count;
+						grunt.verbose.error('ERROR Resp [' + status + '] for ' + this.url + ' -> ' + body);
+
+						if (error) {
+							grunt.verbose.error(error);
+						}
+					}
+				}.bind({ url: approve_key_url }));
 			};
 
 			let f = grunt.option('src');
@@ -188,21 +213,24 @@ module.exports = function (grunt) {
 							const existing_credentials = JSON.parse(body);
 							const existing_products = existing_credentials.apiProducts;
 							let products_match = true;
+							let status_change = [];
 
 							// Check if required products all exist at the correct statuses
 							if (products_match) {
 								for (let j = 0; j < this.products.length; j++) {
 									let found = existing_products.filter((item) => item.apiproduct === this.products[j].apiproduct);
 
+									// Product change required
 									if (!found || found.length <= 0) {
 										grunt.verbose.writeln(`Key ${this.appname} / ${this.cKey} is missing product ${this.products[j].apiproduct}`);
 										products_match = false;
 										break;
 									}
+
+									// Status change required
 									if (found[0].status !== this.products[j].status) {
 										grunt.verbose.writeln(`Key ${this.appname} / ${this.cKey} product ${found[0].apiproduct} status ${found[0].status} should be ${this.products[j].status}`);
-										products_match = false;
-										break;
+										status_change.push(this.products[j]);
 									}
 								}
 							}
@@ -222,7 +250,7 @@ module.exports = function (grunt) {
 
 							if (!products_match) {
 								grunt.verbose.writeln(`Removing existing key ${this.owner} / ${this.appname} / ${this.cKey}`);
-								waitForDelete(key_url, function (error, response, body) {
+								waitForDelete(this.key_url, function (error, response, body) {
 									let dstatus = 999;
 									if (response)
 										dstatus = response.statusCode;
@@ -243,6 +271,12 @@ module.exports = function (grunt) {
 										}
 									}
 								}.bind({ url: key_url, owner: this.owner, appname: this.appname, cKey: this.cKey, cSecret: this.cSecret, products: this.products, create_key_url: this.create_key_url, key_url: this.key_url }));
+							}
+							else if (status_change.length > 0) {
+								grunt.verbose.writeln(`Changing status of ${status_change.length} products on key ${this.appname} / ${this.cKey}`);
+								for (let j = 0; j < status_change.length; j++) {
+									setKeyProductStatus(this.key_url, status_change[j].apiproduct, status_change[j].status);
+								}
 							}
 							else {
 								++key_exists_count;
@@ -277,6 +311,9 @@ module.exports = function (grunt) {
 				if (key_del_count) {
 					grunt.log.ok('Replaced ' + key_del_count + ' app keys');
 				}
+				if (status_count) {
+					grunt.log.ok('Updated the status of ' + status_count + ' API products against app keys');
+				}
 				if (key_err_count) {
 					grunt.log.error('Failed to create ' + key_err_count + ' app keys');
 				}
@@ -286,8 +323,8 @@ module.exports = function (grunt) {
 				if (prod_err_count) {
 					grunt.log.error('Failed to attach products to ' + prod_err_count + ' app keys');
 				}
-				if (approve_err_count) {
-					grunt.log.error('Failed to approve ' + approve_err_count + ' app key products');
+				if (status_err_count) {
+					grunt.log.error('Failed to set the status of ' + status_err_count + ' app key API products');
 				}
 
 				done();
