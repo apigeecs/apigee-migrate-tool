@@ -63,12 +63,13 @@ module.exports = function (grunt) {
 							let proxy_download_url = url + "/" + encodeURIComponent(proxy_detail.name) + "/revisions/" + max_rev + "?format=bundle";
 							grunt.verbose.writeln("Fetching proxy bundle: " + proxy_download_url);
 
-							waitForGet(proxy_download_url)
-								.pipe(fs.createWriteStream(path.join(proxy_dir, proxy_file_package)))
-								.on('close', function () {
-									grunt.verbose.writeln('Proxy ' + this.proxy + ' exported!');
-									++proxy_count;
-								}.bind({ proxy: proxy_detail.name }));
+							waitForGet(proxy_download_url, null, function (req) {
+								req.pipe(fs.createWriteStream(path.join(proxy_dir, proxy_file_package)))
+									.on('close', function () {
+										grunt.verbose.writeln('Proxy ' + this.proxy + ' exported!');
+										++proxy_count;
+									}.bind({ proxy: this.proxy }));
+							}.bind({ proxy: proxy_detail.name }));
 						}
 						else {
 							// Failed to get proxy details
@@ -169,7 +170,7 @@ module.exports = function (grunt) {
 				}
 
 				if (import_proxy) {
-					let req = waitForPost(proxy_import_url, function (error, response, body) {
+					waitForPost(proxy_import_url, function (error, response, body) {
 						let pstatus = 999;
 						if (response && response.statusCode)
 							pstatus = response.statusCode;
@@ -182,10 +183,11 @@ module.exports = function (grunt) {
 							++proxy_count;
 							grunt.verbose.writeln('Resp [' + pstatus + '] for proxy creation ' + this.url + ' -> ' + body);
 						}
-					}.bind({ url: proxy_import_url }));
-
-					let form = req.form();
-					form.append('file', fs.createReadStream(path.join(filepath, proxy_file_package)));
+					}.bind({ url: proxy_import_url }),
+					function (req) {
+						let form = req.form();
+						form.append('file', fs.createReadStream(this.package_path));	
+					}.bind({ package_path: path.join(filepath, proxy_file_package) }));
 				}
 			}.bind({ url: proxy_details_url, proxy_name: name }));
 		});
@@ -311,7 +313,7 @@ module.exports = function (grunt) {
 							}
 
 							let deploy_url = url + "/environments/" + env + "/apis/" + encodeURIComponent(this.proxy) + "/revisions/" + deploy_rev + "/deployments";
-		
+
 							grunt.verbose.writeln(`Deploying proxy ${this.proxy} version ${deploy_rev}: ${deploy_url}`);
 
 							// Deploy the proxy
@@ -319,7 +321,7 @@ module.exports = function (grunt) {
 								let dstatus = 999;
 								if (response && response.statusCode)
 									dstatus = response.statusCode;
-		
+
 								if (!error && dstatus == 200) {
 									++proxy_count;
 									grunt.verbose.writeln('Resp [' + dstatus + '] for proxy deployment ' + this.url + ' -> ' + body);
@@ -327,12 +329,12 @@ module.exports = function (grunt) {
 								else {
 									++proxy_err_count;
 									grunt.log.error('ERROR Resp [' + dstatus + '] for proxy deployment ' + this.url + ' -> ' + body);
-		
+
 									if (error) {
 										grunt.log.error(error);
 									}
 								}
-							}.bind({ url: deploy_url, proxy: this.proxy }));		
+							}.bind({ url: deploy_url, proxy: this.proxy }));
 						}
 						else {
 							// Failed to get proxy details
