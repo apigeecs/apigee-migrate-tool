@@ -112,6 +112,7 @@ module.exports = function (grunt) {
 	});
 
 	grunt.registerMultiTask('importProxies', 'Import all proxies to org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
+		const force_update = grunt.option("force-update");
 		let url = apigee.to.url;
 		let org = apigee.to.org;
 		let userid = apigee.to.userid;
@@ -153,6 +154,9 @@ module.exports = function (grunt) {
 					// Is the proxy being imported newer than the existing one?
 					if (new_proxy.lastModifiedAt && ((!existing_proxy.lastModifiedAt) || (new_proxy.lastModifiedAt > existing_proxy.lastModifiedAt))) {
 						grunt.verbose.writeln(`Updating proxy ${this.proxy_name}`);
+						import_proxy = true;
+					} else if (force_update) {
+						grunt.verbose.writeln(`Forcibly updating proxy ${this.proxy_name}`);
 						import_proxy = true;
 					} else {
 						grunt.verbose.writeln(`Proxy ${this.proxy_name} is up to date`);

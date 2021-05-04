@@ -87,6 +87,7 @@ module.exports = function (grunt) {
 	});
 
 	grunt.registerMultiTask('importProducts', 'Import all products to org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
+		const force_update = grunt.option("force-update");
 		let url = apigee.to.url;
 		let org = apigee.to.org;
 		let userid = apigee.to.userid;
@@ -154,8 +155,13 @@ module.exports = function (grunt) {
 					let existingProduct = JSON.parse(body);
 
 					// Is the import file newer than the instance in Apigee?
-					if (existingProduct.lastModifiedAt && (existingProduct.lastModifiedAt < this.product_content.lastModifiedAt)) {
-						grunt.verbose.writeln(`Updating API product: ${this.product_name}`);
+					const update_required = existingProduct.lastModifiedAt && (existingProduct.lastModifiedAt < this.product_content.lastModifiedAt);
+					if (update_required || force_update) {
+						if (update_required) {
+							grunt.verbose.writeln(`Updating API product: ${this.product_name}`);
+						} else {
+							grunt.verbose.writeln(`Forcibly updating API product: ${this.product_name}`);
+						}
 
 						waitForPut(this.url, {
 							headers: { 'content-type': 'application/json' },

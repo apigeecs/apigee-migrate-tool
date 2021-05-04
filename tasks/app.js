@@ -174,6 +174,7 @@ module.exports = function (grunt) {
 	grunt.registerMultiTask('importApps', 'Import all apps to org ' + apigee.to.org + " [" + apigee.to.version + "]", function () {
 		let files = this.filesSrc;
 		const companies_folder = path.dirname(grunt.config.get("importCompanies.src.data"));
+		const force_update = grunt.option("force-update");
 		const done = this.async();
 
 		const { useCompanyApps } = apigeeOrg(grunt, apigee.to);
@@ -263,8 +264,14 @@ module.exports = function (grunt) {
 						let existingApp = JSON.parse(body);
 
 						// Is the import file newer than the instance in Apigee?
-						if (existingApp.lastModifiedAt && (existingApp.lastModifiedAt < app.lastModifiedAt)) {
-							grunt.verbose.writeln(`Updating app: ${this.app_name} under ${this.ownertype} ${this.owner}`);
+						const update_required = existingApp.lastModifiedAt && (existingApp.lastModifiedAt < app.lastModifiedAt);
+
+						if (update_required || force_update) {
+							if (update_required) {
+								grunt.verbose.writeln(`Updating app: ${this.app_name} under ${this.ownertype} ${this.owner}`);
+							} else {
+								grunt.verbose.writeln(`Forcibly updating app: ${this.app_name} under ${this.ownertype} ${this.owner}`);
+							}
 
 							let updateApp = { ...app };
 							delete updateApp['lastModifiedAt'];
