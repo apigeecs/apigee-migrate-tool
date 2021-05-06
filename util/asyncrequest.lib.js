@@ -31,10 +31,12 @@ module.exports = function (grunt, userid, passwd) {
 			++running_tasks;
 
 			let req = this.createRequest();
-			req.auth(userid, passwd, true);
 
-			if (this.onRequest)
+			if (this.onRequest) {
 				this.onRequest(req);
+			}
+
+			req.auth(userid, passwd, true);
 		}.bind({ createRequest: createRequest, onRequest: onRequest }));
 
 		startTasks();

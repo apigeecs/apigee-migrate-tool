@@ -174,7 +174,7 @@ module.exports = function (grunt) {
 				}
 
 				if (import_proxy) {
-					waitForPost(proxy_import_url, function (error, response, body) {
+					waitForPost(proxy_import_url, {}, function (error, response, body) {
 						let pstatus = 999;
 						if (response && response.statusCode)
 							pstatus = response.statusCode;
