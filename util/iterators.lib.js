@@ -1,16 +1,10 @@
 'use strict';
 
-const asyncrequest = require('./asyncrequest.lib.js');
-
-module.exports = function (grunt, apigee) {
+module.exports = function (grunt, apigee, waitForGet) {
 	let url = apigee.from.url;
 	let org = apigee.from.org;
-	let userid = apigee.from.userid;
-	let passwd = apigee.from.passwd;
 	let dev_count = 0;
 	let company_count = 0;
-
-	const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
 
 	const developers_url = url + "/v1/organizations/" + org + "/developers";
 	const companies_url = url + "/v1/organizations/" + org + "/companies";
@@ -34,7 +28,6 @@ module.exports = function (grunt, apigee) {
 					// detect the only developer returned is the one we asked to start with; that's the end game, but wait.
 				} else if ((devs.length == 1) && (devs[0] == start)) {
 					grunt.log.ok('Retrieved TOTAL of ' + dev_count + ' developers, waiting for callbacks to complete');
-					waitForCompletion();
 				} else {
 					dev_count += devs.length;
 					if (start)
@@ -87,7 +80,6 @@ module.exports = function (grunt, apigee) {
 					// if the only company returned is the one we asked to start with; that's the end game, but wait.
 				} else if ((companies.length == 1) && (companies[0] == start)) {
 					grunt.log.ok('Retrieved TOTAL of ' + company_count + ' companies, waiting for callbacks to complete');
-					waitForCompletion();
 				} else {
 					company_count += companies.length;
 					if (start)

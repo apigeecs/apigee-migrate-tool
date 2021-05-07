@@ -24,8 +24,8 @@ module.exports = function (grunt) {
 			let company_count = 0;
 			let total_apps = 0;
 
-			const { iterateOverDevs, iterateOverCompanies } = iterators(grunt, apigee);
 			const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+			const { iterateOverDevs, iterateOverCompanies } = iterators(grunt, apigee, waitForGet);
 
 			grunt.verbose.writeln("========================= export Apps ===========================");
 

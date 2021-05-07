@@ -14,10 +14,11 @@ module.exports = function (grunt) {
 		let passwd = apigee.from.passwd;
 		let filepath = grunt.config.get("exportDevs.dest.data");
 		let dev_count = 0;
+		let dev_err_count = 0;
 		let done = this.async();
 
-		const { iterateOverDevs } = iterators(grunt, apigee);
 		const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+		const { iterateOverDevs } = iterators(grunt, apigee, waitForGet);
 
 		grunt.verbose.writeln("========================= export Devs ===========================");
 
@@ -40,6 +41,8 @@ module.exports = function (grunt) {
 					grunt.verbose.writeln('Dev ' + dev_detail.email + ' written!');
 				}
 				else {
+					++dev_err_count;
+
 					if (dev_error)
 						grunt.log.error(dev_error);
 					else
@@ -56,8 +59,12 @@ module.exports = function (grunt) {
 				grunt.verbose.writeln("No developers");
 			}
 			else {
-				grunt.log.ok('Exported ' + dev_count + ' developers');
+				grunt.log.ok(`Exported ${dev_count} developers`);
 			}
+			if (dev_err_count) {
+				grunt.log.error(`Failed to export ${dev_err_count} developers`);
+			}
+
 			grunt.verbose.writeln("================== export Devs DONE()");
 
 			done();

@@ -23,12 +23,13 @@ module.exports = function (grunt) {
 			const userid = apigee.from.userid;
 			const passwd = apigee.from.passwd;
 			let company_count = 0;
+			let company_err_count = 0;
 
 			if (use_company_apps) {
 				grunt.verbose.writeln("========================= export Companies ===========================");
 
-				const { iterateOverCompanies } = iterators(grunt, apigee);
 				const { waitForGet, waitForCompletion } = asyncrequest(grunt, userid, passwd);
+				const { iterateOverCompanies } = iterators(grunt, apigee, waitForGet);
 
 				const companies_url = url + "/v1/organizations/" + org + "/companies";
 
@@ -66,6 +67,8 @@ module.exports = function (grunt) {
 							});
 						}
 						else {
+							++company_err_count;
+
 							if (company_error)
 								grunt.log.error(company_error);
 							else
@@ -82,7 +85,10 @@ module.exports = function (grunt) {
 						grunt.verbose.writeln("No companies");
 					}
 					else {
-						grunt.log.ok('Exported ' + company_count + ' companies');
+						grunt.log.ok(`Exported ${company_count} companies`);
+					}
+					if (company_err_count) {
+						grunt.log.error(`Failed to export ${company_err_count} companies`);
 					}
 					grunt.verbose.writeln("================== export Companies DONE()");
 
@@ -91,6 +97,8 @@ module.exports = function (grunt) {
 			}
 			else {
 				grunt.log.writeln(`Source org does not support company apps - skipping company export`);
+
+				done();
 			}
 		});
 	});
