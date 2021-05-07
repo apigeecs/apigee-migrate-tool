@@ -316,12 +316,12 @@ module.exports = function (grunt) {
 								deploy_rev = proxy_details.revision[proxy_details.revision.length - 1];
 							}
 
-							let deploy_url = url + "/environments/" + env + "/apis/" + encodeURIComponent(this.proxy) + "/revisions/" + deploy_rev + "/deployments";
+							let deploy_url = url + "/environments/" + env + "/apis/" + encodeURIComponent(this.proxy) + "/revisions/" + deploy_rev + "/deployments?override=true";
 
 							grunt.verbose.writeln(`Deploying proxy ${this.proxy} version ${deploy_rev}: ${deploy_url}`);
 
 							// Deploy the proxy
-							waitForPost(deploy_url, function (error, response, body) {
+							waitForPost(deploy_url, {}, function (error, response, body) {
 								let dstatus = 999;
 								if (response && response.statusCode)
 									dstatus = response.statusCode;
