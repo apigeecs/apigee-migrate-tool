@@ -390,13 +390,14 @@ module.exports = function (grunt) {
 	});
 
 	grunt.registerTask('undeployProxies', 'UnDeploy all proxies for org ' + apigee.to.org + " environment " + apigee.to.env + " [" + apigee.to.version + "]", function () {
+		const keep_latest = grunt.option("keep-latest");
 		let url = apigee.to.url;
 		let org = apigee.to.org;
 		let env = apigee.to.env;
 		let userid = apigee.to.userid;
 		let passwd = apigee.to.passwd;
-		let deployments;
 		let deployment_count = 0;
+		let deployment_keep_count = 0;
 		let proxy_count = 0;
 		let proxy_err_count = 0;
 		let done = this.async();
@@ -413,33 +414,49 @@ module.exports = function (grunt) {
 				lstatus = response.statusCode;
 
 			if (!error && lstatus == 200) {
-				deployments = JSON.parse(body);
+				const deployments = JSON.parse(body);
 
 				for (let proxy of deployments.aPIProxy) {
-					++deployment_count;
-					let proxy_url = url + "/environments/" + env + "/apis/" + encodeURIComponent(proxy.name) + "/revisions/" + proxy.revision[0].name + "/deployments";
-
-					//Call proxy undeploy
-					waitForDelete(proxy_url, function (error, response, body) {
-						let dstatus = 999;
-						if (response && response.statusCode)
-							dstatus = response.statusCode;
-
-						if (!error && dstatus == 200) {
-							++proxy_count;
-							grunt.verbose.writeln('Resp [' + dstatus + '] for proxy undeployment ' + this.proxy_url + ' -> ' + body);
+					let keep_rev = 0;
+					if (keep_latest) {
+						for (let revision of proxy.revision) {
+							let rev = Number.parseInt(revision.name);
+							keep_rev = Math.max(rev, keep_rev);
 						}
-						else {
-							++proxy_err_count;
-							grunt.log.error('ERROR Resp [' + dstatus + '] for proxy undeployment ' + this.proxy_url + ' -> ' + body);
+					}
 
-							if (error) {
-								grunt.log.error(error);
+					for (let revision of proxy.revision) {
+						const proxy_url = url + "/environments/" + env + "/apis/" + encodeURIComponent(proxy.name) + "/revisions/" + revision.name + "/deployments";
+
+						if (revision.name == keep_rev) {
+							++deployment_keep_count;
+							grunt.verbose.writeln(`Preserving ${proxy.name} version ${revision.name}`);
+							continue;
+						}
+
+						++deployment_count;
+						grunt.verbose.writeln(`Undeploying ${proxy.name} version ${revision.name}`);
+
+						waitForDelete(proxy_url, function (error, response, body) {
+							let dstatus = 999;
+							if (response && response.statusCode)
+								dstatus = response.statusCode;
+
+							if (!error && dstatus == 200) {
+								++proxy_count;
+								grunt.verbose.writeln('Resp [' + dstatus + '] for proxy undeployment ' + this.proxy_url + ' -> ' + body);
 							}
-						}
-					}.bind({ proxy_url: proxy_url }));
-					// End proxy undeploy
-				};
+							else {
+								++proxy_err_count;
+								grunt.log.error('ERROR Resp [' + dstatus + '] for proxy undeployment ' + this.proxy_url + ' -> ' + body);
+
+								if (error) {
+									grunt.log.error(error);
+								}
+							}
+						}.bind({ proxy_url: proxy_url }));
+					}
+				}
 			}
 			else {
 				// Failed to get deployment list
@@ -457,10 +474,13 @@ module.exports = function (grunt) {
 			}
 			else {
 				if (proxy_count) {
-					grunt.log.ok(`Undeployed ${proxy_count} proxies`);
+					grunt.log.ok(`Undeployed ${proxy_count} revisions of ${deployment_count} proxies`);
+				}
+				if (deployment_keep_count) {
+					grunt.log.ok(`Preserved ${deployment_keep_count} proxy revisions`);
 				}
 				if (proxy_err_count) {
-					grunt.log.error(`Failed to undeploy ${proxy_err_count} proxies`);
+					grunt.log.error(`Failed to undeploy ${proxy_err_count} proxy revisions`);
 				}
 			}
 

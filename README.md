@@ -207,6 +207,26 @@ grunt importReports
 
 By default the `importDevs`, `importApps`, and `importKeys` tasks import all the entities from the respective data folder.
 
+### Performing a phased migration
+
+Once an initial migration has been performed, ongoing changes to the source environment can be brought across by exporting and importing the following items into a new data folder:
+```
+grunt exportDevelopers
+grunt exportCompanies
+grunt exportApps
+grunt exportProxies
+grunt exportProducts
+
+grunt importDevelopers
+grunt importCompanies
+grunt importApps
+grunt importKeys
+grunt importProxies
+grunt importProducts
+```
+
+If proxies have been modified, new versions will be created for all modified proxies. The `deployProxies` command can be used to deploy the most recent revision of each proxy. If old revisions are left deployed, use `undeployProxies` with the `--keep-latest` flag to undeploy all but the most recent version.
+
 ### Importing a specific entity
 
 To import a specific entity, use the `src` argument to specify which entity data you want to import.
