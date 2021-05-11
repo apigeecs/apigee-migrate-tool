@@ -66,10 +66,10 @@ module.exports = function (grunt) {
 							waitForGet(proxy_download_url, null, function (req) {
 								req.pipe(fs.createWriteStream(path.join(proxy_dir, proxy_file_package)))
 									.on('close', function () {
-										grunt.verbose.writeln('Proxy ' + this.proxy + ' exported!');
+										grunt.verbose.writeln(`Proxy ${this.proxy} version ${this.version} exported!`);
 										++proxy_count;
-									}.bind({ proxy: this.proxy }));
-							}.bind({ proxy: proxy_detail.name }));
+									}.bind({ proxy: this.proxy, version: this.version }));
+							}.bind({ proxy: proxy_detail.name, version: max_rev }));
 						}
 						else {
 							// Failed to get proxy details
@@ -152,7 +152,16 @@ module.exports = function (grunt) {
 					let new_proxy = grunt.file.readJSON(path.join(filepath, proxy_file_json));
 
 					// Is the proxy being imported newer than the existing one?
-					if (new_proxy.lastModifiedAt && ((!existing_proxy.lastModifiedAt) || (new_proxy.lastModifiedAt > existing_proxy.lastModifiedAt))) {
+					let new_date = 0;
+					if (new_proxy && new_proxy.metaData && new_proxy.metaData.lastModifiedAt) {
+						new_date = new_proxy.metaData.lastModifiedAt;
+					}
+					let existing_date = -1;
+					if (existing_proxy && existing_proxy.metaData && existing_proxy.metaData.lastModifiedAt) {
+						existing_date = existing_proxy.metaData.lastModifiedAt;
+					}
+
+					if (new_date > existing_date) {
 						grunt.verbose.writeln(`Updating proxy ${this.proxy_name}`);
 						import_proxy = true;
 					} else if (force_update) {
@@ -188,10 +197,10 @@ module.exports = function (grunt) {
 							grunt.verbose.writeln('Resp [' + pstatus + '] for proxy creation ' + this.url + ' -> ' + body);
 						}
 					}.bind({ url: proxy_import_url }),
-					function (req) {
-						let form = req.form();
-						form.append('file', fs.createReadStream(this.package_path));	
-					}.bind({ package_path: path.join(filepath, proxy_file_package) }));
+						function (req) {
+							let form = req.form();
+							form.append('file', fs.createReadStream(this.package_path));
+						}.bind({ package_path: path.join(filepath, proxy_file_package) }));
 				}
 			}.bind({ url: proxy_details_url, proxy_name: name }));
 		});
