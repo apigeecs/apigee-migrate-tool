@@ -160,9 +160,6 @@ module.exports = function(grunt) {
     deleteReferences: {
         src: './data/references/*'
     },
-    deleteReferences: {
-        src: './data/virtualhosts/*'
-    },
     deleteVirtualHosts: {
         src: './data/virtualhosts/*'
     },
