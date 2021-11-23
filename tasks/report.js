@@ -57,6 +57,9 @@ module.exports = function(grunt) {
 		var org = apigee.to.org;
 		var userid = apigee.to.userid;
 		var passwd = apigee.to.passwd;
+		var from_env = apigee.from.env;
+		var to_env = apigee.to.env;
+		var env_map = apigee.environments;
 		var done_count = 0;
 		var files;
 		url = url + "/v1/organizations/" + org + "/reports";
@@ -76,6 +79,26 @@ module.exports = function(grunt) {
 		files.forEach( function(filepath) {
 			console.log(filepath);
 			var content = grunt.file.read(filepath);
+
+			// Perform environment renames if required
+			if ((from_env != to_env) || env_map) {
+				var report_content = JSON.parse(content);
+				var report_modified = false;
+
+				if (report_content.environment == from_env) {
+					report_content.environment = to_env;
+					report_modified = true;
+				}
+				else if (env_map && env_map[report_content.environment]) {
+					report_content.environment = env_map[report_content.environment]
+					report_modified = true;
+				}
+
+				if (report_modified) {
+					content = JSON.stringify(report_content);
+				}
+			}
+
 			grunt.verbose.writeln(url);
 			request.post({
 			  headers: {'Content-Type' : 'application/json'},

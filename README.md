@@ -15,17 +15,22 @@ License -  [MIT](https://github.com/apigeecs/apigee-migrate-tool/blob/master/LIC
 ## Data migrated
 
 With the tool, you can import and export data about:
-- developers
-- proxies (latest version)
-- shared flows
-- flow hooks
-- products
-- apps
-- app keys
-- KVMs (org and env)
+- Developers
+- Companies
+- Proxies (latest version)
+- API products
+- Shared flows
+- Flow hooks
+- Products
+- Apps
+- App keys
+- KVMs (org and env. Note that encrypted KVM values cannot be exported.)
 - Reports
 - Spec store (Not available on-premises. Spec store APIs are in experimental status, so may change in the future)
-- Target Servers
+- Target servers
+- Virtual hosts
+- TLS key stores and references (Certificate keys cannot be exported. Certificates are exported but not imported.)
+- Caches
 
 You can also import the following kinds of data from a CSV file to an Apigee org:
   - developers
@@ -33,12 +38,16 @@ You can also import the following kinds of data from a CSV file to an Apigee org
   - app Keys
   - KVMs (org and env)
 
+Note that companies and company apps will only be exported if the source organization supports monetization. If the target organization does not have monetization enabled, companies and company apps will be automatically converted to developers and developer apps. The ``--use-companies`` option may be used to force the processing of companies and company apps when exporting, importing and deleting.
+
+By default, the App, API product and Proxy imports will only overwrite existing entities if the last modified date in the imported data is newer than that on the Apigee-side entities. The ``--force-update`` option will cause these entities to always be overwritten.
+
 ## Data not migrated
 
 **Please note** that the following entities won't be migrated as part of this tool. In most cases, you'll need to migrate these manually using the Apigee Edge console. For more on migrating these, see the Apigee [documentation on org data migration](https://docs.apigee.com/api-services/content/migrating-data-apigee-trial-org).
  - Cache resources and cached values.
- - Environment resources such as virtualhosts, and keystores.
  - KVM entries for "encrypted" key-value maps. Encrypted values can't be retrieved using the management API. Make a note of the values you're using in your old org, then add these values manually to the new org.
+ - TLS certificates and their private keys. The public parts of certificates are exported for reference, but keys cannot be retrieved using the API.
  - Organization or environment level resources such as .jar files, .js files, and so on.
 
 ## Installing the tool
@@ -112,6 +121,21 @@ env | The environment to export from or import to
     } ;
     ```
 
+If the source and destination systems contain multiple environments with differing names, these can be mapped by adding an `environments` object to config.js:
+
+```
+    module.exports = {
+        // from
+        // to
+        environments: {
+            'old-env-1': 'new-env-1',
+            'old-env-2': 'new-env-2'
+        }
+    }
+```
+
+This may resolve issues importing API Products and Reports, which exist at org level but may refer to environments which are not being migrated. 
+
 ## Using the tool
 
 Once you've configured the tool with information about your orgs, you can run it to export and import data. To use the tool, open a command prompt and change to the root directory of the repository you cloned.
@@ -142,39 +166,73 @@ You can run the export and import tasks separately for each kind of org data. Wh
 
 #### Sequence for exporting data
 ```
-grunt exportProducts
 grunt exportDevs
+grunt exportCompanies
+grunt exportProducts
 grunt exportApps
 grunt exportProxies
 grunt exportSharedFlows
+grunt exportFlowHooks
 grunt exportTargetServers
 grunt exportProxyKVM
 grunt exportEnvKVM
 grunt exportOrgKVM
+grunt exportReports
+grunt exportKeyStores
+grunt exportReferences
+grunt exportVirtualHosts
+grunt exportAllSpecs
 ```
 
 #### Sequence for importing data
 ```
+grunt importKeyStores
+grunt importReferences
 grunt importTargetServers
-grunt importProxies
-grunt importSharedFlows
-grunt importDevs
+grunt importVirtualHosts
+grunt importAllSpecs
 grunt importProducts
+grunt importDevs
+grunt importCompanies
 grunt importApps
 grunt importKeys
+grunt importProxies
+grunt importSharedFlows
+grunt importFlowHooks
 grunt importProxyKVM
 grunt importEnvKVM
 grunt importOrgKVM
+grunt importReports
 ```
 
 By default the `importDevs`, `importApps`, and `importKeys` tasks import all the entities from the respective data folder.
+
+### Performing a phased migration
+
+Once an initial migration has been performed, ongoing changes to the source environment can be brought across by exporting and importing the following items into a new data folder:
+```
+grunt exportDevelopers
+grunt exportCompanies
+grunt exportApps
+grunt exportProxies
+grunt exportProducts
+
+grunt importDevelopers
+grunt importCompanies
+grunt importApps
+grunt importKeys
+grunt importProxies
+grunt importProducts
+```
+
+If proxies have been modified, new versions will be created for all modified proxies. The `deployProxies` command can be used to deploy the most recent revision of each proxy. If old revisions are left deployed, use `undeployProxies` with the `--keep-latest` flag to undeploy all but the most recent version.
 
 ### Importing a specific entity
 
 To import a specific entity, use the `src` argument to specify which entity data you want to import.
 
 ```
-grunt importApps -v --src=./data/apps/*/App*
+grunt importApps -v --src=./data/apps/developers/*/App*
 ```
 
 
